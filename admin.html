@@ -205,7 +205,21 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Kirjautumisnäyttö -->
+    <div id="loginScreen" class="container" style="text-align: center; padding: 60px 40px;">
+        <h1>🔐 Admin-Kirjautuminen</h1>
+        <p style="margin: 30px 0; color: #ccc;">Tämä sivu vaatii kirjautumista.</p>
+        <button onclick="checkAdminAccess()" style="max-width: 300px; margin: 0 auto;">
+            🔑 Kirjaudu sisään
+        </button>
+        <br><br>
+        <button onclick="window.location.href='index.html'" style="background: #666; max-width: 300px; margin: 10px auto;">
+            🏠 Palaa peliin
+        </button>
+    </div>
+
+    <!-- Admin-sisältö (piilotettu oletuksena) -->
+    <div id="adminContent" class="container" style="display: none;">
         <h1>🔧 Lahen Alueet - Hallintapaneeli</h1>
         
         <div class="config-section">
@@ -220,6 +234,7 @@
             <button onclick="saveAllChanges()" class="success">💾 Tallenna kaikki muutokset</button>
             <button onclick="exportData()">📤 Vie data</button>
             <button onclick="importData()">📥 Tuo data</button>
+            <button onclick="logout()" class="danger">🚪 Kirjaudu ulos</button>
         </div>
 
         <div id="loadingIndicator" class="loading" style="display: none;">
@@ -248,6 +263,25 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     
     <script>
+        // Admin-salasanansuojaus
+        const ADMIN_PASSWORD = "geokätkö2025"; // Vaihda tarvittaessa
+        
+        function checkAdminAccess() {
+            const password = prompt('Syötä admin-salasana:');
+            if (password === ADMIN_PASSWORD) {
+                // Salasana oikein, näytä admin-paneeli
+                document.getElementById('adminContent').style.display = 'block';
+                document.getElementById('loginScreen').style.display = 'none';
+                loadData(); // Lataa data kun kirjautuminen onnistui
+            } else if (password !== null) {
+                alert('Väärä salasana! Yritä uudelleen.');
+                checkAdminAccess(); // Kysy uudelleen
+            } else {
+                // Käyttäjä painoi Peruuta
+                window.location.href = 'index.html'; // Palaa pääsivulle
+            }
+        }
+
         // Firebase konfiguraatio
         const firebaseConfig = {
             apiKey: "AIzaSyCaLtaT4J4qFBxEE0bxK8_1yyQDbcwwWfs",
@@ -560,6 +594,14 @@
             input.click();
         }
 
+        // Uloskirjautuminen
+        function logout() {
+            if (confirm('Haluatko varmasti kirjautua ulos?')) {
+                document.getElementById('adminContent').style.display = 'none';
+                document.getElementById('loginScreen').style.display = 'block';
+            }
+        }
+
         // Sulje modal kun klikataan ulkopuolelta
         window.onclick = function(event) {
             const modal = document.getElementById('editModal');
@@ -568,8 +610,11 @@
             }
         }
 
-        // Lataa data sivun latautuessa
-        document.addEventListener('DOMContentLoaded', loadData);
+        // Tarkista kirjautuminen sivun latautuessa
+        document.addEventListener('DOMContentLoaded', () => {
+            // Älä lataa dataa automaattisesti, vaan näytä kirjautumisnäyttö
+            // Käyttäjän täytyy kirjautua ensin
+        });
     </script>
 </body>
 </html>
