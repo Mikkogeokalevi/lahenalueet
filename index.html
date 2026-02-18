@@ -499,12 +499,6 @@
                 }
                 puzzleSetup = gameConfigDoc.data();
                 
-                // Lisää codeString jos puuttuu
-                if (!puzzleSetup.codeString) {
-                    puzzleSetup.codeString = "ABCD1234EFGH5678IJKL9012MNOP3456";
-                    console.log('Lisätty oletus codeString:', puzzleSetup.codeString);
-                }
-                
                 document.getElementById('progressText').textContent = 'Ladataan vaiheita...';
                 document.getElementById('progressFill').style.width = '50%';
 
