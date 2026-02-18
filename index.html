@@ -733,14 +733,19 @@
                 }
                 
                 // Näytä viesti oikeassa paikassa
+                console.log('DEBUG: Näytetään viesti:', responseMsg);
                 if (currentStep.challengeImage) {
                     // Kuva on näkyvissä - näytä viesti kuvan alla
+                    console.log('DEBUG: Näytetään kuva-viestissä');
                     kuvaViestiElementti.textContent = responseMsg;
                     kuvaViestiElementti.className = 'info';
+                    console.log('DEBUG: kuvaViestiElementti.textContent:', kuvaViestiElementti.textContent);
                 } else {
                     // Ei kuvaa - näytä viesti normaalisti
+                    console.log('DEBUG: Näytetään normaali viesti');
                     viestiElementti.textContent = responseMsg;
                     viestiElementti.className = 'info';
+                    console.log('DEBUG: viestiElementti.textContent:', viestiElementti.textContent);
                 }
 
                 currentStep.wrongAttemptsMade = 0; 
