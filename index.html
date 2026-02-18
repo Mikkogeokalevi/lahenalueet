@@ -766,10 +766,25 @@
                     // Siirry seuraavaan vaiheeseen
                     currentStepIndex++;
                     const nextStepData = puzzleSetup.steps[currentStepIndex];
-                    updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt);
-                    inputField.value = "";
-                    inputField.focus();
-                    updateProgress();
+                    
+                    // Näytä viesti ENSIN ennen nollausta
+                    if (currentStep.challengeImage) {
+                        // Kuva on näkyvissä - näytä viesti kuvan alla
+                        kuvaViestiElementti.textContent = responseMsg;
+                        kuvaViestiElementti.className = 'info';
+                    } else {
+                        // Ei kuvaa - näytä viesti normaalisti
+                        viestiElementti.textContent = responseMsg;
+                        viestiElementti.className = 'info';
+                    }
+                    
+                    // Sitten päivitä näyttö (mutta älä nollaa juuri asetettua viestiä)
+                    setTimeout(() => {
+                        updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt);
+                        inputField.value = "";
+                        inputField.focus();
+                        updateProgress();
+                    }, 100);
                 }
             } else {
                 // Väärä vastaus
