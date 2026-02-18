@@ -436,11 +436,12 @@
         <div id="kuvaContainer" style="display: none;">
             <img id="promptKuva" src="" alt="Vihje">
             <p id="kuvaTekstiLabel" style="display: none;"></p>
+            <p id="viesti" style="margin-top: 15px;"></p>
         </div>
         <br>
         <input type="text" id="salasanaInput" autofocus disabled placeholder="Kirjoita vastaus tähän..."><br>
         <button onclick="tarkistaSalasana()" disabled id="submitButton">Tarkista</button>
-        <p id="viesti"></p>
+        <p id="viesti" style="display: none;"></p>
     </div>
 
     <!-- Firebase SDK -->
@@ -628,6 +629,14 @@
             kuvaTekstiLabel.style.display = 'none';
             kuvaTekstiLabel.textContent = "";
 
+            // Piilota vanha viesti-elementti ja näytä oikea
+            const allViestiElements = document.querySelectorAll('#viesti');
+            allViestiElements.forEach(el => {
+                el.style.display = 'none';
+                el.textContent = '';
+                el.className = '';
+            });
+
             if (challengeImage) {
                 promptKuva.src = challengeImage;
                 kuvaContainer.style.display = 'block';
@@ -635,12 +644,27 @@
                     kuvaTekstiLabel.textContent = challengeText;
                     kuvaTekstiLabel.style.display = 'block';
                 }
+                // Näytä kuvan alla oleva viesti-elementti
+                const kuvaViesti = kuvaContainer.querySelector('#viesti');
+                if (kuvaViesti) {
+                    kuvaViesti.style.display = 'block';
+                }
             } else if (challengeText) {
                 kysymysLabel.textContent = challengeText; 
                 kysymysLabel.style.display = 'block';
+                // Näytä normaali viesti-elementti (ei kuvan alla)
+                const normaaliViesti = document.querySelector('.container > #viesti');
+                if (normaaliViesti) {
+                    normaaliViesti.style.display = 'block';
+                }
             } else {
                 kysymysLabel.textContent = puzzleSetup.initialPrompt;
                 kysymysLabel.display = 'block';
+                // Näytä normaali viesti-elementti
+                const normaaliViesti = document.querySelector('.container > #viesti');
+                if (normaaliViesti) {
+                    normaaliViesti.style.display = 'block';
+                }
             }
         }
 
