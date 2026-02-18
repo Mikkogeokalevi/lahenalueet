@@ -623,7 +623,7 @@
                                     currentStep.responseMessage;
 
                 // Lisää koodinpätkä responseMessageen, jos on Vaihe 2 tai myöhemmin, eikä viimeinen vaihe
-                if (currentStepIndex >= 1 && currentStepIndex < puzzleSetup.steps.length - 1) { // Vaihe 1 on index 0, Vaihe 2 on index 1
+                if (currentStepIndex >= 1 && currentStepIndex < puzzleSetup.steps.length - 1 && puzzleSetup.codeString) { // Vaihe 1 on index 0, Vaihe 2 on index 1
                     const codeStartIndex = (currentStepIndex - 1) * 2;
                     const codeSnippet = puzzleSetup.codeString.substring(codeStartIndex, codeStartIndex + 2);
                     responseMsg = `Koodi: ${codeSnippet} - ${responseMsg}`;
