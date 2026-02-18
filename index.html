@@ -640,7 +640,7 @@
                 kuvaViestiElementti.className = '';
             }
 
-            if (challengeImage) {
+            if (challengeImage && challengeImage !== 'null' && challengeImage.trim() !== '') {
                 promptKuva.src = challengeImage;
                 kuvaContainer.style.display = 'block';
                 if (challengeText) {
