@@ -436,12 +436,12 @@
         <div id="kuvaContainer" style="display: none;">
             <img id="promptKuva" src="" alt="Vihje">
             <p id="kuvaTekstiLabel" style="display: none;"></p>
-            <p id="viesti" style="margin-top: 15px;"></p>
+            <p id="kuvaViesti" style="margin-top: 15px;"></p>
         </div>
         <br>
         <input type="text" id="salasanaInput" autofocus disabled placeholder="Kirjoita vastaus tähän..."><br>
         <button onclick="tarkistaSalasana()" disabled id="submitButton">Tarkista</button>
-        <p id="viesti" style="display: none;"></p>
+        <p id="viesti"></p>
     </div>
 
     <!-- Firebase SDK -->
@@ -470,6 +470,7 @@
         let puzzleSteps = [];
         const inputField = document.getElementById('salasanaInput');
         const viestiElementti = document.getElementById('viesti');
+        const kuvaViestiElementti = document.getElementById('kuvaViesti');
         const kysymysLabel = document.getElementById('kysymysLabel');
         const kuvaTekstiLabel = document.getElementById('kuvaTekstiLabel');
         const submitButton = document.querySelector('button');
@@ -629,13 +630,13 @@
             kuvaTekstiLabel.style.display = 'none';
             kuvaTekstiLabel.textContent = "";
 
-            // Piilota vanha viesti-elementti ja näytä oikea
-            const allViestiElements = document.querySelectorAll('#viesti');
-            allViestiElements.forEach(el => {
-                el.style.display = 'none';
-                el.textContent = '';
-                el.className = '';
-            });
+            // Piilota molemmat viestit
+            viestiElementti.style.display = 'none';
+            viestiElementti.textContent = '';
+            viestiElementti.className = '';
+            kuvaViestiElementti.style.display = 'none';
+            kuvaViestiElementti.textContent = '';
+            kuvaViestiElementti.className = '';
 
             if (challengeImage) {
                 promptKuva.src = challengeImage;
@@ -645,26 +646,17 @@
                     kuvaTekstiLabel.style.display = 'block';
                 }
                 // Näytä kuvan alla oleva viesti-elementti
-                const kuvaViesti = kuvaContainer.querySelector('#viesti');
-                if (kuvaViesti) {
-                    kuvaViesti.style.display = 'block';
-                }
+                kuvaViestiElementti.style.display = 'block';
             } else if (challengeText) {
                 kysymysLabel.textContent = challengeText; 
                 kysymysLabel.style.display = 'block';
-                // Näytä normaali viesti-elementti (ei kuvan alla)
-                const normaaliViesti = document.querySelector('.container > #viesti');
-                if (normaaliViesti) {
-                    normaaliViesti.style.display = 'block';
-                }
+                // Näytä normaali viesti-elementti
+                viestiElementti.style.display = 'block';
             } else {
                 kysymysLabel.textContent = puzzleSetup.initialPrompt;
                 kysymysLabel.display = 'block';
                 // Näytä normaali viesti-elementti
-                const normaaliViesti = document.querySelector('.container > #viesti');
-                if (normaaliViesti) {
-                    normaaliViesti.style.display = 'block';
-                }
+                viestiElementti.style.display = 'block';
             }
         }
 
@@ -737,11 +729,8 @@
                 // Näytä viesti oikeassa paikassa
                 if (currentStep.challengeImage) {
                     // Kuva on näkyvissä - näytä viesti kuvan alla
-                    const kuvaViesti = kuvaContainer.querySelector('#viesti');
-                    if (kuvaViesti) {
-                        kuvaViesti.textContent = responseMsg;
-                        kuvaViesti.className = 'info';
-                    }
+                    kuvaViestiElementti.textContent = responseMsg;
+                    kuvaViestiElementti.className = 'info';
                 } else {
                     // Ei kuvaa - näytä viesti normaalisti
                     viestiElementti.textContent = responseMsg;
@@ -772,11 +761,8 @@
                 // Näytä virheviesti oikeassa paikassa
                 if (currentStep.challengeImage) {
                     // Kuva on näkyvissä - näytä viesti kuvan alla
-                    const kuvaViesti = kuvaContainer.querySelector('#viesti');
-                    if (kuvaViesti) {
-                        kuvaViesti.textContent = errorMsg;
-                        kuvaViesti.className = 'error';
-                    }
+                    kuvaViestiElementti.textContent = errorMsg;
+                    kuvaViestiElementti.className = 'error';
                 } else {
                     // Ei kuvaa - näytä viesti normaalisti
                     viestiElementti.textContent = errorMsg;
