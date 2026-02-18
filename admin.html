@@ -253,6 +253,16 @@
             <h2>🎮 Pelin Konfiguraatio</h2>
             <div id="configStatus" class="status info">Ladataan konfiguraatiota...</div>
             <div id="configForm"></div>
+            <div style="margin-top: 20px; padding: 15px; background: rgba(255, 136, 0, 0.1); border-radius: 8px; border: 1px solid rgba(255, 136, 0, 0.3);">
+                <h3 style="color: #ff8800; margin-bottom: 10px;">🔑 CodeString Hallinta</h3>
+                <p style="color: #f0f0f0; margin-bottom: 15px;">Lisää codeString kenttä pelin konfiguraatioon koodinpätköitä varten.</p>
+                <button onclick="addCodeString()" style="background: linear-gradient(135deg, #ff8800, #ffaa00); padding: 10px 20px; font-size: 0.9em;">
+                    ➕ Lisää CodeString
+                </button>
+                <button onclick="checkCodeString()" style="background: linear-gradient(135deg, #2196F3, #1976D2); padding: 10px 20px; font-size: 0.9em;">
+                    🔍 Tarkista CodeString
+                </button>
+            </div>
         </div>
 
         <div class="controls">
@@ -355,6 +365,61 @@
             }).catch(error => {
                 console.error('Uloskirjautumisvirhe:', error);
             });
+        }
+
+        // CodeString hallinta
+        async function addCodeString() {
+            try {
+                const gameConfigRef = db.collection('puzzles').doc('gameConfig');
+                const gameConfigDoc = await gameConfigRef.get();
+                
+                if (!gameConfigDoc.exists) {
+                    showStatus('Pelin konfiguraatiota ei löytynyt', 'error');
+                    return;
+                }
+                
+                const currentData = gameConfigDoc.data();
+                
+                if (currentData.codeString) {
+                    showStatus(`CodeString on jo olemassa: ${currentData.codeString}`, 'info');
+                    return;
+                }
+                
+                // Lisää codeString
+                await gameConfigRef.update({
+                    codeString: "ABCD1234EFGH5678IJKL9012MNOP3456"
+                });
+                
+                showStatus('✅ CodeString lisätty onnistuneesti!', 'success');
+                loadData(); // Lataa data uudelleen
+                
+            } catch (error) {
+                console.error('Virhe:', error);
+                showStatus('❌ Virhe: ' + error.message, 'error');
+            }
+        }
+
+        async function checkCodeString() {
+            try {
+                const gameConfigDoc = await db.collection('puzzles').doc('gameConfig').get();
+                
+                if (!gameConfigDoc.exists) {
+                    showStatus('Pelin konfiguraatiota ei löytynyt', 'error');
+                    return;
+                }
+                
+                const data = gameConfigDoc.data();
+                
+                if (data.codeString) {
+                    showStatus(`✅ CodeString löytyy: ${data.codeString}`, 'success');
+                } else {
+                    showStatus('❌ CodeString ei löydy konfiguraatiosta', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Virhe:', error);
+                showStatus('❌ Virhe: ' + error.message, 'error');
+            }
         }
 
         let gameConfig = null;
