@@ -627,6 +627,8 @@
         }
 
         function updateChallengeDisplay(challengeImage, challengeText, keepMessage = false) {
+            console.log('DEBUG: updateChallengeDisplay called with:', {challengeImage, challengeText, keepMessage});
+            console.log('DEBUG: puzzleSetup.initialPrompt:', puzzleSetup.initialPrompt);
             kysymysLabel.style.display = 'none'; 
             kuvaContainer.style.display = 'none';
             promptKuva.src = "";
@@ -658,6 +660,7 @@
                 // Näytä normaali viesti-elementti
                 viestiElementti.style.display = 'block';
             } else {
+                console.log('DEBUG: Using fallback - puzzleSetup.initialPrompt:', puzzleSetup.initialPrompt);
                 kysymysLabel.textContent = puzzleSetup.initialPrompt || "Kirjoita tunnussana:";
                 kysymysLabel.style.display = 'block';
                 // Näytä normaali viesti-elementti
