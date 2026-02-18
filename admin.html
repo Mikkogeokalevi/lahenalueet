@@ -7,25 +7,28 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+            color: #ffffff;
             margin: 0;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: white;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(20, 20, 20, 0.95);
             padding: 30px;
             border-radius: 15px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
         }
         h1 {
             text-align: center;
             margin-bottom: 30px;
             font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
         .controls {
             display: flex;
@@ -34,32 +37,45 @@
             flex-wrap: wrap;
         }
         button {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #ff8800, #ffaa00);
             color: white;
             border: none;
             padding: 12px 24px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 136, 0, 0.3);
         }
         button:hover {
-            background: #45a049;
+            background: linear-gradient(135deg, #ffaa00, #ff8800);
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 12px rgba(255, 136, 0, 0.3);
         }
         button.danger {
-            background: #f44336;
+            background: linear-gradient(135deg, #f44336, #d32f2f);
         }
         button.danger:hover {
-            background: #da190b;
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(244, 67, 54, 0.3);
         }
         button.warning {
-            background: #ff9800;
+            background: linear-gradient(135deg, #ff9800, #f57c00);
         }
         button.warning:hover {
-            background: #e68900;
+            background: linear-gradient(135deg, #f57c00, #ef6c00);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(255, 152, 0, 0.3);
+        }
+        button.success {
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+        }
+        button.success:hover {
+            background: linear-gradient(135deg, #388E3C, #2E7D32);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
         }
         .steps-grid {
             display: grid;
@@ -68,16 +84,18 @@
             margin-bottom: 30px;
         }
         .step-card {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(30, 30, 30, 0.9);
             padding: 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
         }
         .step-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            background: rgba(40, 40, 40, 0.95);
+            border-color: rgba(255, 136, 0, 0.3);
         }
         .step-header {
             display: flex;
@@ -88,7 +106,8 @@
         .step-number {
             font-size: 1.2em;
             font-weight: bold;
-            color: #4CAF50;
+            color: #ff8800;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
         }
         .step-actions {
             display: flex;
@@ -104,18 +123,26 @@
         label {
             display: block;
             margin-bottom: 5px;
-            font-weight: bold;
-            color: #e3f2fd;
+            font-weight: 600;
+            color: #f0f0f0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
         }
-        input, textarea, select {
+        input[type="text"], textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 14px;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            font-size: 1em;
             box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #ff8800;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(255, 136, 0, 0.3);
         }
         input::placeholder, textarea::placeholder {
             color: rgba(255, 255, 255, 0.6);
