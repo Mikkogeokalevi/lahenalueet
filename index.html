@@ -751,6 +751,14 @@
                         document.querySelector('.progress-bar').style.display = 'none';
                         document.getElementById('progressText').style.display = 'none';
                     }, 2000);
+                } else {
+                    // Siirry seuraavaan vaiheeseen
+                    currentStepIndex++;
+                    const nextStepData = puzzleSetup.steps[currentStepIndex];
+                    updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt);
+                    inputField.value = "";
+                    inputField.focus();
+                    updateProgress();
                 }
             } else {
                 // Väärä vastaus
