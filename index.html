@@ -688,7 +688,9 @@
             updateProgress();
 
             const initialStepData = puzzleSetup.steps[currentStepIndex];
-            updateChallengeDisplay(initialStepData.challengeImage, initialStepData.challengeText || puzzleSetup.initialPrompt);
+            const challengeImage = initialStepData.challengeImage === "null" ? null : initialStepData.challengeImage;
+            const challengeText = initialStepData.challengeText === "null" ? null : initialStepData.challengeText;
+            updateChallengeDisplay(challengeImage, challengeText || puzzleSetup.initialPrompt);
             
             viestiElementti.textContent = "";
             viestiElementti.className = '';
