@@ -188,6 +188,49 @@
         const kuvaContainer = document.getElementById('kuvaContainer');
         const promptKuva = document.getElementById('promptKuva');
 
+        let currentStepIndex = 0;
+        let isLoading = true;
+
+        // Hae data Firebasesta
+        async function loadPuzzleData() {
+            try {
+                isLoading = true;
+                kysymysLabel.textContent = "Ladataan arvoitusta...";
+                inputField.disabled = true;
+                submitButton.disabled = true;
+
+                // Hae pelin konfiguraatio
+                const gameConfigDoc = await db.collection('puzzles').doc('gameConfig').get();
+                if (!gameConfigDoc.exists) {
+                    throw new Error('Pelin konfiguraatiota ei löytynyt');
+                }
+                puzzleSetup = gameConfigDoc.data();
+
+                // Hae kaikki vaiheet
+                const stepsSnapshot = await db.collection('puzzles').get();
+                puzzleSteps = [];
+                stepsSnapshot.forEach(doc => {
+                    if (doc.id !== 'gameConfig') {
+                        puzzleSteps.push(doc.data());
+                    }
+                });
+
+                // Järjestä vaiheet stepNumber mukaan
+                puzzleSteps.sort((a, b) => a.stepNumber - b.stepNumber);
+                puzzleSetup.steps = puzzleSteps;
+
+                isLoading = false;
+                initializePuzzle();
+
+            } catch (error) {
+                console.error('Virhe datan lataamisessa:', error);
+                kysymysLabel.textContent = "Virhe: Arvoituksen lataaminen epäonnistui.";
+                viestiElementti.textContent = "Tarkista internet-yhteytesi ja yritä uudelleen.";
+                inputField.disabled = true;
+                submitButton.disabled = true;
+            }
+        }
+
         function updateChallengeDisplay(challengeImage, challengeText) {
             kysymysLabel.style.display = 'none'; 
             kuvaContainer.style.display = 'none';
