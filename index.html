@@ -623,20 +623,22 @@
             }
         }
 
-        function updateChallengeDisplay(challengeImage, challengeText) {
+        function updateChallengeDisplay(challengeImage, challengeText, keepMessage = false) {
             kysymysLabel.style.display = 'none'; 
             kuvaContainer.style.display = 'none';
             promptKuva.src = "";
             kuvaTekstiLabel.style.display = 'none';
             kuvaTekstiLabel.textContent = "";
 
-            // Piilota molemmat viestit
-            viestiElementti.style.display = 'none';
-            viestiElementti.textContent = '';
-            viestiElementti.className = '';
-            kuvaViestiElementti.style.display = 'none';
-            kuvaViestiElementti.textContent = '';
-            kuvaViestiElementti.className = '';
+            // Nollaa viestit vain jos ei pidä säilyttää
+            if (!keepMessage) {
+                viestiElementti.style.display = 'none';
+                viestiElementti.textContent = '';
+                viestiElementti.className = '';
+                kuvaViestiElementti.style.display = 'none';
+                kuvaViestiElementti.textContent = '';
+                kuvaViestiElementti.className = '';
+            }
 
             if (challengeImage) {
                 promptKuva.src = challengeImage;
@@ -767,7 +769,7 @@
                     currentStepIndex++;
                     const nextStepData = puzzleSetup.steps[currentStepIndex];
                     
-                    // Näytä viesti ENSIN ennen nollausta
+                    // Näytä viesti ENSIN
                     if (currentStep.challengeImage) {
                         // Kuva on näkyvissä - näytä viesti kuvan alla
                         kuvaViestiElementti.textContent = responseMsg;
@@ -778,13 +780,11 @@
                         viestiElementti.className = 'info';
                     }
                     
-                    // Sitten päivitä näyttö (mutta älä nollaa juuri asetettua viestiä)
-                    setTimeout(() => {
-                        updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt);
-                        inputField.value = "";
-                        inputField.focus();
-                        updateProgress();
-                    }, 100);
+                    // Päivitä näyttö mutta SÄILYTÄ viesti
+                    updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt, true);
+                    inputField.value = "";
+                    inputField.focus();
+                    updateProgress();
                 }
             } else {
                 // Väärä vastaus
