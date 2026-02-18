@@ -708,17 +708,11 @@
                                     currentStep.responseMessage;
 
                 // Lisää koodinpätkä jos on kuva ja codeString on olemassa
-                console.log('DEBUG: currentStep.challengeImage:', currentStep.challengeImage);
-                console.log('DEBUG: puzzleSetup.codeString:', puzzleSetup.codeString);
-                console.log('DEBUG: currentStep.stepNumber:', currentStep.stepNumber);
-                
                 if (currentStep.challengeImage && puzzleSetup.codeString) {
                     const codePart = getCodePart(currentStep.stepNumber);
-                    console.log('DEBUG: codePart:', codePart);
                     if (codePart) {
                         collectedCodeParts.push(codePart);
                         responseMsg = `🔑 Koodinpätkä: ${codePart} - ${responseMsg}`;
-                        console.log('DEBUG: responseMsg:', responseMsg);
                         
                         // Tarkista onko tämä viimeinen kuva
                         const imageSteps = puzzleSetup.steps.filter(step => step.challengeImage && step.stepNumber > 0);
@@ -735,19 +729,16 @@
                 }
                 
                 // Näytä viesti oikeassa paikassa
-                console.log('DEBUG: Näytetään viesti:', responseMsg);
                 if (currentStep.challengeImage) {
-                    // Kuva on näkyvissä - näytä viesti kuvan alla
-                    console.log('DEBUG: Näytetään kuva-viestissä');
+                    // Kuva oli näkyvissä - näytä viesti kuvan päällä
                     kuvaViestiElementti.textContent = responseMsg;
                     kuvaViestiElementti.className = 'info';
-                    console.log('DEBUG: kuvaViestiElementti.textContent:', kuvaViestiElementti.textContent);
+                    kuvaViestiElementti.style.display = 'block';
                 } else {
                     // Ei kuvaa - näytä viesti normaalisti
-                    console.log('DEBUG: Näytetään normaali viesti');
                     viestiElementti.textContent = responseMsg;
                     viestiElementti.className = 'info';
-                    console.log('DEBUG: viestiElementti.textContent:', viestiElementti.textContent);
+                    viestiElementti.style.display = 'block';
                 }
 
                 currentStep.wrongAttemptsMade = 0; 
@@ -809,19 +800,23 @@
                 currentStep.wrongAttemptsMade = (currentStep.wrongAttemptsMade || 0) + 1;
 
                 if (currentStep.maxWrongAttempts && currentStep.wrongAttemptsMade >= currentStep.maxWrongAttempts) {
-                    // Liikaa virheitä - siirry seuraavaan vaiheeseen
-                    currentStepIndex++;
-                    if (currentStepIndex < puzzleSetup.steps.length) {
-                        const nextStepData = puzzleSetup.steps[currentStepIndex];
-                        updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt);
-                        inputField.value = "";
-                        inputField.focus();
+                    // Liikaa virheitä - palauta alkuun
+                    currentStepIndex = 0;
+                    const firstStepData = puzzleSetup.steps[currentStepIndex];
+                    updateChallengeDisplay(firstStepData.challengeImage, firstStepData.challengeText || puzzleSetup.initialPrompt);
+                    inputField.value = "";
+                    inputField.focus();
+                    updateProgress();
+                    
+                    // Näytä virheviesti
+                    if (currentStep.challengeImage) {
+                        kuvaViestiElementti.textContent = "Liikaa virheitä! Palataan alkuun.";
+                        kuvaViestiElementti.className = 'error';
+                        kuvaViestiElementti.style.display = 'block';
                     } else {
-                        // Kaikki vaiheet käytetty
-                        viestiElementti.textContent = puzzleSetup.finalFailMessage;
+                        viestiElementti.textContent = "Liikaa virheitä! Palataan alkuun.";
                         viestiElementti.className = 'error';
-                        inputField.disabled = true;
-                        submitButton.disabled = true;
+                        viestiElementti.style.display = 'block';
                     }
                 }
             }
