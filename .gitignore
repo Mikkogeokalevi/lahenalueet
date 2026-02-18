@@ -1,0 +1,13 @@
+# Älä jaa näitä tiedostoja GitHubissa
+config.js
+firebase-rules.txt
+
+# Yleiset .gitignore säännöt
+node_modules/
+.DS_Store
+*.log
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
