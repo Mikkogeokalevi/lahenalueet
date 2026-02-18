@@ -734,8 +734,19 @@
                     }
                 }
                 
-                viestiElementti.textContent = responseMsg;
-                viestiElementti.className = 'info';
+                // Näytä viesti oikeassa paikassa
+                if (currentStep.challengeImage) {
+                    // Kuva on näkyvissä - näytä viesti kuvan alla
+                    const kuvaViesti = kuvaContainer.querySelector('#viesti');
+                    if (kuvaViesti) {
+                        kuvaViesti.textContent = responseMsg;
+                        kuvaViesti.className = 'info';
+                    }
+                } else {
+                    // Ei kuvaa - näytä viesti normaalisti
+                    viestiElementti.textContent = responseMsg;
+                    viestiElementti.className = 'info';
+                }
 
                 currentStep.wrongAttemptsMade = 0; 
 
@@ -751,43 +762,52 @@
                         document.querySelector('.progress-bar').style.display = 'none';
                         document.getElementById('progressText').style.display = 'none';
                     }, 2000);
-                } else {
-                    // Siirry seuraavaan vaiheeseen
-                    currentStepIndex++;
-                    updateProgress();
-                    const nextChallengeData = puzzleSetup.steps[currentStepIndex];
-                    updateChallengeDisplay(nextChallengeData.challengeImage, nextChallengeData.challengeText);
-                    inputField.value = "";
-                    inputField.focus();
                 }
             } else {
-                // Väärä syöte
-                currentStep.wrongAttemptsMade++;
+                // Väärä vastaus
+                let errorMsg = typeof currentStep.errorMessage === 'function' ?
+                              currentStep.errorMessage() :
+                              currentStep.errorMessage || puzzleSetup.wrongInputMessage;
 
-                if (currentStep.maxWrongAttempts > 0 && currentStep.wrongAttemptsMade <= currentStep.maxWrongAttempts) {
-                    viestiElementti.textContent = puzzleSetup.wrongInputMessage + 
-                                                  ` (${currentStep.wrongAttemptsMade}/${currentStep.maxWrongAttempts} väärää yritystä)`;
-                    viestiElementti.className = '';
-                    inputField.value = "";
-                    inputField.focus();
+                // Näytä virheviesti oikeassa paikassa
+                if (currentStep.challengeImage) {
+                    // Kuva on näkyvissä - näytä viesti kuvan alla
+                    const kuvaViesti = kuvaContainer.querySelector('#viesti');
+                    if (kuvaViesti) {
+                        kuvaViesti.textContent = errorMsg;
+                        kuvaViesti.className = 'error';
+                    }
                 } else {
-                    viestiElementti.textContent = puzzleSetup.finalFailMessage;
-                    viestiElementti.className = '';
-                    
-                    initializePuzzle();
-                    inputField.value = "";
-                    inputField.focus();
+                    // Ei kuvaa - näytä viesti normaalisti
+                    viestiElementti.textContent = errorMsg;
+                    viestiElementti.className = 'error';
+                }
+
+                currentStep.wrongAttemptsMade = (currentStep.wrongAttemptsMade || 0) + 1;
+
+                if (currentStep.maxWrongAttempts && currentStep.wrongAttemptsMade >= currentStep.maxWrongAttempts) {
+                    // Liikaa virheitä - siirry seuraavaan vaiheeseen
+                    currentStepIndex++;
+                    if (currentStepIndex < puzzleSetup.steps.length) {
+                        const nextStepData = puzzleSetup.steps[currentStepIndex];
+                        updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt);
+                        inputField.value = "";
+                        inputField.focus();
+                    } else {
+                        // Kaikki vaiheet käytetty
+                        viestiElementti.textContent = puzzleSetup.finalFailMessage;
+                        viestiElementti.className = 'error';
+                        inputField.disabled = true;
+                        submitButton.disabled = true;
+                    }
                 }
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadPuzzleData();
-            inputField.addEventListener('keypress', function(event) {
-                if (event.key === 'Enter' && !submitButton.disabled) {
-                    tarkistaSalasana();
-                }
-            });
+        inputField.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && !submitButton.disabled) {
+                tarkistaSalasana();
+            }
         });
     </script>
 
