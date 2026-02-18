@@ -499,7 +499,10 @@
                 if (!gameConfigDoc.exists) {
                     throw new Error('Pelin konfiguraatiota ei löytynyt');
                 }
-                puzzleSetup = gameConfigDoc.data();
+                const gameConfigData = gameConfigDoc.data();
+                console.log('DEBUG: Firebase data:', gameConfigData);
+                console.log('DEBUG: initialPrompt:', gameConfigData.initialPrompt);
+                puzzleSetup = gameConfigData;
                 
                 document.getElementById('progressText').textContent = 'Ladataan vaiheita...';
                 document.getElementById('progressFill').style.width = '50%';
