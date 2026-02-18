@@ -499,10 +499,7 @@
                 if (!gameConfigDoc.exists) {
                     throw new Error('Pelin konfiguraatiota ei löytynyt');
                 }
-                const gameConfigData = gameConfigDoc.data();
-                console.log('DEBUG: Firebase data:', gameConfigData);
-                console.log('DEBUG: initialPrompt:', gameConfigData.initialPrompt);
-                puzzleSetup = gameConfigData;
+                puzzleSetup = gameConfigDoc.data();
                 
                 document.getElementById('progressText').textContent = 'Ladataan vaiheita...';
                 document.getElementById('progressFill').style.width = '50%';
@@ -627,8 +624,6 @@
         }
 
         function updateChallengeDisplay(challengeImage, challengeText, keepMessage = false) {
-            console.log('DEBUG: updateChallengeDisplay called with:', {challengeImage, challengeText, keepMessage});
-            console.log('DEBUG: puzzleSetup.initialPrompt:', puzzleSetup.initialPrompt);
             kysymysLabel.style.display = 'none'; 
             kuvaContainer.style.display = 'none';
             promptKuva.src = "";
@@ -660,7 +655,6 @@
                 // Näytä normaali viesti-elementti
                 viestiElementti.style.display = 'block';
             } else {
-                console.log('DEBUG: Using fallback - puzzleSetup.initialPrompt:', puzzleSetup.initialPrompt);
                 kysymysLabel.textContent = puzzleSetup.initialPrompt || "Kirjoita tunnussana:";
                 kysymysLabel.style.display = 'block';
                 // Näytä normaali viesti-elementti
@@ -669,7 +663,6 @@
         }
 
         function initializePuzzle() {
-            console.log('DEBUG: initializePuzzle - initialPrompt:', puzzleSetup.initialPrompt);
             if (typeof puzzleSetup === 'undefined' || !puzzleSetup.steps || puzzleSetup.steps.length === 0) {
                 kysymysLabel.textContent = "Virhe: Arvoituksen dataa ei voitu ladata.";
                 viestiElementti.textContent = "Tarkista internet-yhteytesi ja yritä uudelleen.";
@@ -754,7 +747,9 @@
 
                 if (currentStepIndex === puzzleSetup.steps.length - 1) {
                     // Viimeinen vaihe vastattu oikein (ei kuva)
-                    updateChallengeDisplay(currentStep.challengeImage, currentStep.challengeText);
+                    const challengeImage = currentStep.challengeImage === "null" ? null : currentStep.challengeImage;
+                    const challengeText = currentStep.challengeText === "null" ? null : currentStep.challengeText;
+                    updateChallengeDisplay(challengeImage, challengeText);
                     viestiElementti.className = 'success';
                     inputField.disabled = true;
                     submitButton.disabled = true;
