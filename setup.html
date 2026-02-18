@@ -304,7 +304,7 @@
                 const batch = db.batch();
                 
                 puzzleData.steps.forEach((step) => {
-                    const stepRef = db.collection('puzzles').collection('steps').doc(`step_${step.stepNumber}`);
+                    const stepRef = db.collection('puzzles').doc(`step_${step.stepNumber}`);
                     batch.set(stepRef, step);
                 });
 
