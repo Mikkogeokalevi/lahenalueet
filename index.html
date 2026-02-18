@@ -769,19 +769,22 @@
                     currentStepIndex++;
                     const nextStepData = puzzleSetup.steps[currentStepIndex];
                     
-                    // Aseta uusi viesti
+                    // Päivitä näyttö ensin
+                    updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt);
+                    
+                    // Sitten aseta viesti
                     if (currentStep.challengeImage) {
-                        // Kuva on näkyvissä - näytä viesti kuvan PÄÄLLÄ
+                        // Kuva oli näkyvissä - näytä viesti kuvan päällä
                         kuvaViestiElementti.textContent = responseMsg;
                         kuvaViestiElementti.className = 'info';
+                        kuvaViestiElementti.style.display = 'block';
                     } else {
                         // Ei kuvaa - näytä viesti normaalisti
                         viestiElementti.textContent = responseMsg;
                         viestiElementti.className = 'info';
+                        viestiElementti.style.display = 'block';
                     }
                     
-                    // Päivitä näyttö mutta NOLLAA vanha viesti
-                    updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt, false);
                     inputField.value = "";
                     inputField.focus();
                     updateProgress();
