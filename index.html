@@ -22,7 +22,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
             color: #ffffff;
             min-height: 100vh;
             display: flex;
@@ -88,15 +88,15 @@
 
         /* Pääcontainer */
         .container {
-            background: rgba(30, 30, 30, 0.9);
+            background: rgba(20, 20, 20, 0.95);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 20px;
             padding: 40px;
             max-width: 500px;
             width: 100%;
             box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.4),
+                0 20px 40px rgba(0, 0, 0, 0.6),
                 0 0 80px rgba(255, 136, 0, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
             position: relative;
@@ -157,8 +157,8 @@
             display: block;
             margin-bottom: 15px;
             font-size: 1.2em;
-            color: #e0e0e0;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            color: #f0f0f0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
             font-weight: 500;
             text-align: center;
         }
@@ -477,6 +477,7 @@
 
         let currentStepIndex = 0;
         let isLoading = true;
+        let collectedCodeParts = []; // Kerätyt koodinpätkät
 
         // Hae data Firebasesta
         async function loadPuzzleData() {
@@ -497,6 +498,12 @@
                     throw new Error('Pelin konfiguraatiota ei löytynyt');
                 }
                 puzzleSetup = gameConfigDoc.data();
+                
+                // Lisää codeString jos puuttuu
+                if (!puzzleSetup.codeString) {
+                    puzzleSetup.codeString = "ABCD1234EFGH5678IJKL9012MNOP3456";
+                    console.log('Lisätty oletus codeString:', puzzleSetup.codeString);
+                }
                 
                 document.getElementById('progressText').textContent = 'Ladataan vaiheita...';
                 document.getElementById('progressFill').style.width = '50%';
@@ -543,6 +550,50 @@
             }
         }
 
+        // Laske koodinpätkän koko
+        function getCodePartSize() {
+            if (!puzzleSetup.codeString) return 0;
+            
+            // Laske kuinka monta kuvavaihetta on (pl. salasanavaihe)
+            const imageSteps = puzzleSetup.steps.filter(step => step.challengeImage && step.stepNumber > 0);
+            const imageCount = imageSteps.length;
+            
+            if (imageCount === 0) return 0;
+            
+            // Laske osien koko
+            if (imageCount === 1) {
+                return puzzleSetup.codeString.length; // Koko koodi yhdelle kuvalle
+            } else if (imageCount === 2) {
+                return Math.floor(puzzleSetup.codeString.length / 2); // Puolet
+            } else {
+                return Math.floor(puzzleSetup.codeString.length / (imageCount - 1)); // Jaetaan osiin
+            }
+        }
+
+        // Hae koodinpätkä vaiheelle
+        function getCodePart(stepIndex) {
+            if (!puzzleSetup.codeString) return '';
+            
+            const imageSteps = puzzleSetup.steps.filter(step => step.challengeImage && step.stepNumber > 0);
+            const imageCount = imageSteps.length;
+            
+            if (imageCount <= 1) return puzzleSetup.codeString;
+            
+            const partSize = getCodePartSize();
+            const currentImageIndex = imageSteps.findIndex(step => step.stepNumber === stepIndex);
+            
+            if (currentImageIndex === -1) return '';
+            
+            const startPos = currentImageIndex * partSize;
+            
+            // Viimeinen kuva saa loput koodista
+            if (currentImageIndex === imageCount - 1) {
+                return puzzleSetup.codeString.substring(startPos);
+            }
+            
+            return puzzleSetup.codeString.substring(startPos, startPos + partSize);
+        }
+
         // Päivitä edistymispalkki
         function updateProgress() {
             if (!puzzleSetup || !puzzleSetup.steps) return;
@@ -552,6 +603,28 @@
             
             document.getElementById('progressFill').style.width = progress + '%';
             document.getElementById('progressText').textContent = progressText;
+        }
+
+        // Tarkista koko koodi lopussa
+        function checkFinalCode() {
+            const fullCode = collectedCodeParts.join('');
+            const userCode = prompt('Syötä aiemmin saadut koodinpätkät putkeen:');
+            
+            if (userCode && userCode.toUpperCase() === fullCode.toUpperCase()) {
+                viestiElementti.textContent = '🎉 KOKO KOODI OIKEIN! Olet ratkaissut mysteerin!';
+                viestiElementti.className = 'success';
+                inputField.disabled = true;
+                submitButton.disabled = true;
+                
+                // Piilota edistymispalkki lopussa
+                setTimeout(() => {
+                    document.querySelector('.progress-bar').style.display = 'none';
+                    document.getElementById('progressText').style.display = 'none';
+                }, 2000);
+            } else {
+                viestiElementti.textContent = 'Koodi oli väärin. Yritä uudelleen!';
+                viestiElementti.className = 'error';
+            }
         }
 
         function updateChallengeDisplay(challengeImage, challengeText) {
@@ -622,11 +695,25 @@
                                     currentStep.responseMessage() :
                                     currentStep.responseMessage;
 
-                // Lisää koodinpätkä responseMessageen, jos on Vaihe 2 tai myöhemmin, eikä viimeinen vaihe
-                if (currentStepIndex >= 1 && currentStepIndex < puzzleSetup.steps.length - 1 && puzzleSetup.codeString) { // Vaihe 1 on index 0, Vaihe 2 on index 1
-                    const codeStartIndex = (currentStepIndex - 1) * 2;
-                    const codeSnippet = puzzleSetup.codeString.substring(codeStartIndex, codeStartIndex + 2);
-                    responseMsg = `Koodi: ${codeSnippet} - ${responseMsg}`;
+                // Lisää koodinpätkä jos on kuva ja codeString on olemassa
+                if (currentStep.challengeImage && puzzleSetup.codeString) {
+                    const codePart = getCodePart(currentStep.stepNumber);
+                    if (codePart) {
+                        collectedCodeParts.push(codePart);
+                        responseMsg = `🔑 Koodinpätkä: ${codePart} - ${responseMsg}`;
+                        
+                        // Tarkista onko tämä viimeinen kuva
+                        const imageSteps = puzzleSetup.steps.filter(step => step.challengeImage && step.stepNumber > 0);
+                        const currentImageIndex = imageSteps.findIndex(step => step.stepNumber === currentStep.stepNumber);
+                        
+                        if (currentImageIndex === imageSteps.length - 1) {
+                            // Viimeinen kuva - kysy koko koodia
+                            setTimeout(() => {
+                                checkFinalCode();
+                            }, 2000);
+                            return;
+                        }
+                    }
                 }
                 
                 viestiElementti.textContent = responseMsg;
@@ -635,7 +722,7 @@
                 currentStep.wrongAttemptsMade = 0; 
 
                 if (currentStepIndex === puzzleSetup.steps.length - 1) {
-                    // Viimeinen vaihe vastattu oikein
+                    // Viimeinen vaihe vastattu oikein (ei kuva)
                     updateChallengeDisplay(currentStep.challengeImage, currentStep.challengeText);
                     viestiElementti.className = 'success';
                     inputField.disabled = true;
