@@ -263,18 +263,25 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     
     <script>
-        // Admin-salasanansuojaus
-        const ADMIN_PASSWORD = "geokätkö2025"; // Vaihda tarvittaessa
-        
+        // Admin-salasanansuojaus - parempi tapa
         function checkAdminAccess() {
-            const password = prompt('Syötä admin-salasana:');
-            if (password === ADMIN_PASSWORD) {
-                // Salasana oikein, näytä admin-paneeli
+            // Yksinkertainen "salaisuus" - kysymys ja vastaus
+            const questions = [
+                { question: "Mikä on Lahestä suurin järvi?", answer: "vesijärvi" },
+                { question: "Mikä vuosi Lahestä tuli kaupungiksi?", answer: "1905" },
+                { question: "Mikä on Lahen vaakunan väri?", answer: "punainen" }
+            ];
+            
+            const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+            const answer = prompt(`Kirjoita vastaus: ${randomQuestion.question}`);
+            
+            if (answer && answer.toLowerCase().trim() === randomQuestion.answer) {
+                // Vastaus oikein, näytä admin-paneeli
                 document.getElementById('adminContent').style.display = 'block';
                 document.getElementById('loginScreen').style.display = 'none';
                 loadData(); // Lataa data kun kirjautuminen onnistui
-            } else if (password !== null) {
-                alert('Väärä salasana! Yritä uudelleen.');
+            } else if (answer !== null) {
+                alert('Väärä vastaus! Yritä uudelleen.');
                 checkAdminAccess(); // Kysy uudelleen
             } else {
                 // Käyttäjä painoi Peruuta
