@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lahen Alueet - Hallintapaneeli</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+        button.danger {
+            background: #f44336;
+        }
+        button.danger:hover {
+            background: #da190b;
+        }
+        button.warning {
+            background: #ff9800;
+        }
+        button.warning:hover {
+            background: #e68900;
+        }
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .step-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .step-number {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .step-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .step-actions button {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #e3f2fd;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input::placeholder, textarea::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .close:hover {
+            color: white;
+        }
+        .config-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
+        }
+        .status.error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            color: #f44336;
+        }
+        .status.info {
+            background: rgba(33, 150, 243, 0.2);
+            border: 1px solid #2196F3;
+            color: #2196F3;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Lahen Alueet - Hallintapaneeli</h1>
+        
+        <div class="config-section">
+            <h2>🎮 Pelin Konfiguraatio</h2>
+            <div id="configStatus" class="status info">Ladataan konfiguraatiota...</div>
+            <div id="configForm"></div>
+        </div>
+
+        <div class="controls">
+            <button onclick="loadData()">🔄 Lataa data</button>
+            <button onclick="addNewStep()" class="warning">➕ Lisää uusi vaihe</button>
+            <button onclick="saveAllChanges()" class="success">💾 Tallenna kaikki muutokset</button>
+            <button onclick="exportData()">📤 Vie data</button>
+            <button onclick="importData()">📥 Tuo data</button>
+        </div>
+
+        <div id="loadingIndicator" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <div>Ladataan dataa Firebasesta...</div>
+        </div>
+
+        <div id="stepsContainer" class="steps-grid"></div>
+    </div>
+
+    <!-- Muokkausmodal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">Muokkaa vaihetta</h2>
+            <div id="modalForm"></div>
+            <div style="margin-top: 20px;">
+                <button onclick="saveStep()">💾 Tallenna</button>
+                <button onclick="closeModal()" class="danger">Peruuta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase konfiguraatio
+        const firebaseConfig = {
+            apiKey: "AIzaSyCaLtaT4J4qFBxEE0bxK8_1yyQDbcwwWfs",
+            authDomain: "lahenalueet.firebaseapp.com",
+            projectId: "lahenalueet",
+            storageBucket: "lahenalueet.firebasestorage.app",
+            messagingSenderId: "237550096622",
+            appId: "1:237550096622:web:4d403d5c40ebf356dea3ff"
+        };
+        
+        // Alusta Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let gameConfig = null;
+        let steps = [];
+        let currentEditingStep = null;
+
+        // Näytä/piilota latausindikaattori
+        function setLoading(isLoading) {
+            document.getElementById('loadingIndicator').style.display = isLoading ? 'block' : 'none';
+            document.getElementById('stepsContainer').style.display = isLoading ? 'none' : 'grid';
+        }
+
+        // Näytä status-viesti
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('configStatus');
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+            setTimeout(() => {
+                statusEl.className = 'status info';
+                statusEl.textContent = 'Valmis';
+            }, 3000);
+        }
+
+        // Lataa data Firebasesta
+        async function loadData() {
+            try {
+                setLoading(true);
+                
+                // Lataa konfiguraatio
+                const configDoc = await db.collection('puzzles').doc('gameConfig').get();
+                if (configDoc.exists) {
+                    gameConfig = configDoc.data();
+                    renderConfigForm();
+                }
+
+                // Lataa vaiheet
+                const stepsSnapshot = await db.collection('puzzles').get();
+                steps = [];
+                stepsSnapshot.forEach(doc => {
+                    if (doc.id !== 'gameConfig') {
+                        steps.push({ id: doc.id, ...doc.data() });
+                    }
+                });
+
+                // Järjestä vaiheet
+                steps.sort((a, b) => a.stepNumber - b.stepNumber);
+                renderSteps();
+                
+                showStatus('Data ladattu onnistuneesti!', 'success');
+            } catch (error) {
+                console.error('Virhe datan lataamisessa:', error);
+                showStatus('Virhe datan lataamisessa: ' + error.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Renderöi konfiguraatiolomake
+        function renderConfigForm() {
+            const formEl = document.getElementById('configForm');
+            formEl.innerHTML = `
+                <div class="form-group">
+                    <label>Aloitusteksti:</label>
+                    <input type="text" id="initialPrompt" value="${gameConfig.initialPrompt || ''}" 
+                           placeholder="Kirjoita salasana">
+                </div>
+                <div class="form-group">
+                    <label>Väärän vastauksen viesti:</label>
+                    <input type="text" id="wrongInputMessage" value="${gameConfig.wrongInputMessage || ''}" 
+                           placeholder="Väärin meni! Palataan takaisin alkuun.">
+                </div>
+                <div class="form-group">
+                    <label>Lopullinen epäonnistumisviesti:</label>
+                    <input type="text" id="finalFailMessage" value="${gameConfig.finalFailMessage || ''}" 
+                           placeholder="Liian monta väärää yritystä!">
+                </div>
+                <div class="form-group">
+                    <label>Maksimi väärät yritykset:</label>
+                    <input type="number" id="maxWrongAttempts" value="${gameConfig.maxWrongAttempts || 3}" 
+                           min="1" max="10">
+                </div>
+                <button onclick="saveConfig()">💾 Tallenna konfiguraatio</button>
+            `;
+        }
+
+        // Renderöi vaiheet
+        function renderSteps() {
+            const container = document.getElementById('stepsContainer');
+            container.innerHTML = '';
+
+            steps.forEach((step, index) => {
+                const card = document.createElement('div');
+                card.className = 'step-card';
+                card.innerHTML = `
+                    <div class="step-header">
+                        <div class="step-number">Vaihe ${step.stepNumber}</div>
+                        <div class="step-actions">
+                            <button onclick="editStep(${index})">✏️ Muokkaa</button>
+                            <button onclick="deleteStep(${index})" class="danger">🗑️ Poista</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Oikea vastaus:</label>
+                        <input type="text" value="${step.expectedInput || ''}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Vastausviesti:</label>
+                        <textarea readonly>${step.responseMessage || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Kuvateksti:</label>
+                        <input type="text" value="${step.challengeText || ''}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Kuvatiedosto:</label>
+                        <input type="text" value="${step.challengeImage || ''}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Maksimi väärät yritykset:</label>
+                        <input type="number" value="${step.maxWrongAttempts || 3}" readonly min="1" max="10">
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Tallenna konfiguraatio
+        async function saveConfig() {
+            try {
+                const config = {
+                    initialPrompt: document.getElementById('initialPrompt').value,
+                    wrongInputMessage: document.getElementById('wrongInputMessage').value,
+                    finalFailMessage: document.getElementById('finalFailMessage').value,
+                    maxWrongAttempts: parseInt(document.getElementById('maxWrongAttempts').value)
+                };
+
+                await db.collection('puzzles').doc('gameConfig').set(config);
+                gameConfig = config;
+                showStatus('Konfiguraatio tallennettu!', 'success');
+            } catch (error) {
+                console.error('Virhe konfiguraation tallentamisessa:', error);
+                showStatus('Virhe tallentamisessa: ' + error.message, 'error');
+            }
+        }
+
+        // Lisää uusi vaihe
+        function addNewStep() {
+            const newStepNumber = steps.length > 0 ? Math.max(...steps.map(s => s.stepNumber)) + 1 : 0;
+            currentEditingStep = {
+                stepNumber: newStepNumber,
+                expectedInput: '',
+                responseMessage: '',
+                challengeText: '',
+                challengeImage: '',
+                maxWrongAttempts: 3
+            };
+            openModal('Lisää uusi vaihe');
+        }
+
+        // Muokkaa vaihetta
+        function editStep(index) {
+            currentEditingStep = { ...steps[index] };
+            openModal(`Muokkaa vaihetta ${currentEditingStep.stepNumber}`);
+        }
+
+        // Avaa modal
+        function openModal(title) {
+            document.getElementById('modalTitle').textContent = title;
+            renderModalForm();
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        // Sulje modal
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+            currentEditingStep = null;
+        }
+
+        // Renderöi modal-lomake
+        function renderModalForm() {
+            const formEl = document.getElementById('modalForm');
+            formEl.innerHTML = `
+                <div class="form-group">
+                    <label>Vaiheen numero:</label>
+                    <input type="number" id="editStepNumber" value="${currentEditingStep.stepNumber}" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Oikea vastaus:</label>
+                    <input type="text" id="editExpectedInput" value="${currentEditingStep.expectedInput}" 
+                           placeholder="Oikea vastaus (esim. Jalkaranta)">
+                </div>
+                <div class="form-group">
+                    <label>Vastausviesti:</label>
+                    <textarea id="editResponseMessage" placeholder="Viesti oikeasta vastauksesta">${currentEditingStep.responseMessage}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Kuvateksti:</label>
+                    <input type="text" id="editChallengeText" value="${currentEditingStep.challengeText}" 
+                           placeholder="Teksti kuvan yhteydessä">
+                </div>
+                <div class="form-group">
+                    <label>Kuvatiedosto:</label>
+                    <input type="text" id="editChallengeImage" value="${currentEditingStep.challengeImage}" 
+                           placeholder="Kuvatiedoston nimi (esim. jalkaranta.jpg)">
+                </div>
+                <div class="form-group">
+                    <label>Maksimi väärät yritykset:</label>
+                    <input type="number" id="editMaxWrongAttempts" value="${currentEditingStep.maxWrongAttempts}" 
+                           min="1" max="10">
+                </div>
+            `;
+        }
+
+        // Tallenna vaihe
+        async function saveStep() {
+            try {
+                const stepData = {
+                    stepNumber: parseInt(document.getElementById('editStepNumber').value),
+                    expectedInput: document.getElementById('editExpectedInput').value,
+                    responseMessage: document.getElementById('editResponseMessage').value,
+                    challengeText: document.getElementById('editChallengeText').value,
+                    challengeImage: document.getElementById('editChallengeImage').value,
+                    maxWrongAttempts: parseInt(document.getElementById('editMaxWrongAttempts').value)
+                };
+
+                const docId = `step_${stepData.stepNumber}`;
+                await db.collection('puzzles').doc(docId).set(stepData);
+                
+                showStatus('Vaihe tallennettu!', 'success');
+                closeModal();
+                loadData(); // Lataa data uudelleen
+            } catch (error) {
+                console.error('Virhe vaiheen tallentamisessa:', error);
+                showStatus('Virhe tallentamisessa: ' + error.message, 'error');
+            }
+        }
+
+        // Poista vaihe
+        async function deleteStep(index) {
+            if (!confirm('Oletko varma että haluat poistaa tämän vaiheen?')) return;
+            
+            try {
+                const step = steps[index];
+                await db.collection('puzzles').doc(step.id).delete();
+                showStatus('Vaihe poistettu!', 'success');
+                loadData();
+            } catch (error) {
+                console.error('Virhe vaiheen poistamisessa:', error);
+                showStatus('Virhe poistamisessa: ' + error.message, 'error');
+            }
+        }
+
+        // Vie data (JSON)
+        function exportData() {
+            const data = {
+                gameConfig: gameConfig,
+                steps: steps
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lahen-alueet-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Tuo data
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                const text = await file.text();
+                const data = JSON.parse(text);
+                
+                try {
+                    // Tallenna konfiguraatio
+                    if (data.gameConfig) {
+                        await db.collection('puzzles').doc('gameConfig').set(data.gameConfig);
+                    }
+                    
+                    // Tallenna vaiheet
+                    if (data.steps) {
+                        for (const step of data.steps) {
+                            await db.collection('puzzles').doc(step.id).set(step);
+                        }
+                    }
+                    
+                    showStatus('Data tuotu onnistuneesti!', 'success');
+                    loadData();
+                } catch (error) {
+                    console.error('Virhe tuonnissa:', error);
+                    showStatus('Virhe tuonnissa: ' + error.message, 'error');
+                }
+            };
+            input.click();
+        }
+
+        // Sulje modal kun klikataan ulkopuolelta
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Lataa data sivun latautuessa
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>
