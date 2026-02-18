@@ -706,11 +706,17 @@
                                     currentStep.responseMessage;
 
                 // Lisää koodinpätkä jos on kuva ja codeString on olemassa
+                console.log('DEBUG: currentStep.challengeImage:', currentStep.challengeImage);
+                console.log('DEBUG: puzzleSetup.codeString:', puzzleSetup.codeString);
+                console.log('DEBUG: currentStep.stepNumber:', currentStep.stepNumber);
+                
                 if (currentStep.challengeImage && puzzleSetup.codeString) {
                     const codePart = getCodePart(currentStep.stepNumber);
+                    console.log('DEBUG: codePart:', codePart);
                     if (codePart) {
                         collectedCodeParts.push(codePart);
                         responseMsg = `🔑 Koodinpätkä: ${codePart} - ${responseMsg}`;
+                        console.log('DEBUG: responseMsg:', responseMsg);
                         
                         // Tarkista onko tämä viimeinen kuva
                         const imageSteps = puzzleSetup.steps.filter(step => step.challengeImage && step.stepNumber > 0);
