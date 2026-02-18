@@ -256,6 +256,10 @@
             <div style="margin-top: 20px; padding: 15px; background: rgba(255, 136, 0, 0.1); border-radius: 8px; border: 1px solid rgba(255, 136, 0, 0.3);">
                 <h3 style="color: #ff8800; margin-bottom: 10px;">🔑 CodeString Hallinta</h3>
                 <p style="color: #f0f0f0; margin-bottom: 15px;">Hallinnoi codeString-kenttää pelin konfiguraatiossa.</p>
+                
+                <!-- Status-viestit täällä -->
+                <div id="codeStringStatus" class="status info" style="margin-bottom: 15px;">Ladataan konfiguraatiota...</div>
+                
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
                     <button onclick="addCodeString()" style="background: linear-gradient(135deg, #ff8800, #ffaa00); padding: 10px 20px; font-size: 0.9em;">
                         ➕ Lisää CodeString
@@ -393,14 +397,16 @@
                 const gameConfigDoc = await gameConfigRef.get();
                 
                 if (!gameConfigDoc.exists) {
-                    showStatus('Pelin konfiguraatiota ei löytynyt', 'error');
+                    document.getElementById('codeStringStatus').textContent = 'Pelin konfiguraatiota ei löytynyt';
+                    document.getElementById('codeStringStatus').className = 'status error';
                     return;
                 }
                 
                 const currentData = gameConfigDoc.data();
                 
                 if (currentData.codeString) {
-                    showStatus(`CodeString on jo olemassa: ${currentData.codeString}`, 'info');
+                    document.getElementById('codeStringStatus').textContent = `CodeString on jo olemassa: ${currentData.codeString}`;
+                    document.getElementById('codeStringStatus').className = 'status info';
                     return;
                 }
                 
@@ -409,12 +415,14 @@
                     codeString: "ABCD1234EFGH5678IJKL9012MNOP3456"
                 });
                 
-                showStatus('✅ CodeString lisätty onnistuneesti!', 'success');
+                document.getElementById('codeStringStatus').textContent = '✅ CodeString lisätty onnistuneesti!';
+                document.getElementById('codeStringStatus').className = 'status success';
                 loadData(); // Lataa data uudelleen
                 
             } catch (error) {
                 console.error('Virhe:', error);
-                showStatus('❌ Virhe: ' + error.message, 'error');
+                document.getElementById('codeStringStatus').textContent = '❌ Virhe: ' + error.message;
+                document.getElementById('codeStringStatus').className = 'status error';
             }
         }
 
@@ -423,14 +431,16 @@
                 const gameConfigDoc = await db.collection('puzzles').doc('gameConfig').get();
                 
                 if (!gameConfigDoc.exists) {
-                    showStatus('Pelin konfiguraatiota ei löytynyt', 'error');
+                    document.getElementById('codeStringStatus').textContent = 'Pelin konfiguraatiota ei löytynyt';
+                    document.getElementById('codeStringStatus').className = 'status error';
                     return;
                 }
                 
                 const data = gameConfigDoc.data();
                 
                 if (!data.codeString) {
-                    showStatus('❌ CodeString ei löydy - lisää se ensin', 'error');
+                    document.getElementById('codeStringStatus').textContent = '❌ CodeString ei löydy - lisää se ensin';
+                    document.getElementById('codeStringStatus').className = 'status error';
                     return;
                 }
                 
@@ -440,7 +450,8 @@
                 
             } catch (error) {
                 console.error('Virhe:', error);
-                showStatus('❌ Virhe: ' + error.message, 'error');
+                document.getElementById('codeStringStatus').textContent = '❌ Virhe: ' + error.message;
+                document.getElementById('codeStringStatus').className = 'status error';
             }
         }
 
@@ -449,7 +460,8 @@
                 const newCodeString = document.getElementById('codeStringInput').value.trim();
                 
                 if (!newCodeString) {
-                    showStatus('❌ CodeString ei voi olla tyhjä', 'error');
+                    document.getElementById('codeStringStatus').textContent = '❌ CodeString ei voi olla tyhjä';
+                    document.getElementById('codeStringStatus').className = 'status error';
                     return;
                 }
                 
@@ -458,13 +470,15 @@
                     codeString: newCodeString
                 });
                 
-                showStatus('✅ CodeString päivitetty onnistuneesti!', 'success');
+                document.getElementById('codeStringStatus').textContent = '✅ CodeString päivitetty onnistuneesti!';
+                document.getElementById('codeStringStatus').className = 'status success';
                 document.getElementById('codeStringEdit').style.display = 'none';
                 loadData(); // Lataa data uudelleen
                 
             } catch (error) {
                 console.error('Virhe:', error);
-                showStatus('❌ Virhe: ' + error.message, 'error');
+                document.getElementById('codeStringStatus').textContent = '❌ Virhe: ' + error.message;
+                document.getElementById('codeStringStatus').className = 'status error';
             }
         }
 
@@ -478,21 +492,25 @@
                 const gameConfigDoc = await db.collection('puzzles').doc('gameConfig').get();
                 
                 if (!gameConfigDoc.exists) {
-                    showStatus('Pelin konfiguraatiota ei löytynyt', 'error');
+                    document.getElementById('codeStringStatus').textContent = 'Pelin konfiguraatiota ei löytynyt';
+                    document.getElementById('codeStringStatus').className = 'status error';
                     return;
                 }
                 
                 const data = gameConfigDoc.data();
                 
                 if (data.codeString) {
-                    showStatus(`✅ CodeString löytyy: ${data.codeString}`, 'success');
+                    document.getElementById('codeStringStatus').textContent = `✅ CodeString löytyy: ${data.codeString}`;
+                    document.getElementById('codeStringStatus').className = 'status success';
                 } else {
-                    showStatus('❌ CodeString ei löydy konfiguraatiosta', 'error');
+                    document.getElementById('codeStringStatus').textContent = '❌ CodeString ei löydy konfiguraatiosta';
+                    document.getElementById('codeStringStatus').className = 'status error';
                 }
                 
             } catch (error) {
                 console.error('Virhe:', error);
-                showStatus('❌ Virhe: ' + error.message, 'error');
+                document.getElementById('codeStringStatus').textContent = '❌ Virhe: ' + error.message;
+                document.getElementById('codeStringStatus').className = 'status error';
             }
         }
 
