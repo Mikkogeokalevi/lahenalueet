@@ -12,128 +12,408 @@
 </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mysteeri Lahen Kadonneista Alueista</title>
+    <title>Lahen Alueiden Mysteeri - Geokätköily</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            color: #ffffff;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            margin: 0;
             padding: 20px;
-            box-sizing: border-box;
+            position: relative;
+            overflow-x: hidden;
+        }
 
-            /* Maastomainen tausta */
-            background-color: #3e4a36; /* Tummanvihreä pohja */
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 800 800"><defs><filter id="f" x="0" y="0"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="4" stitchTiles="stitch" result="noise" /><feGaussianBlur in="noise" stdDeviation="15" /><feColorMatrix type="saturate" values="0.7" /><feBlend in="SourceGraphic" in2="noise" mode="multiply" /></filter></defs><rect width="100%" height="100%" fill="#3e4a36" /><rect width="100%" height="100%" fill="#4a5a40" style="filter:url(#f);opacity:0.6" /><rect width="100%" height="100%" fill="#5f6d58" style="filter:url(#f);opacity:0.4" /><rect width="100%" height="100%" fill="#2a3324" style="filter:url(#f);opacity:0.2" /></svg>');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            padding-top: 40px;
-        }
-        .container {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 25px 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            text-align: center;
+        /* Taustaeffekti */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 400px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(5px);
-            margin-top: 20px;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 136, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 136, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
         }
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-size: 1.1em;
-            color: #dbe0d7;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-        input[type="text"] {
-            padding: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #7c8e6d;
-            border-radius: 4px;
-            width: calc(100% - 26px);
-            box-sizing: border-box;
-            font-size: 1em;
-            background-color: rgba(255, 255, 255, 0.8);
-            color: #333;
-        }
-        button {
-            padding: 12px 25px;
-            background-color: #5cb85c;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.2s, transform 0.1s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        button:hover {
-            background-color: #449d44;
-            transform: translateY(-1px);
-        }
-        button:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        }
-        button:disabled {
-            background-color: #8c9c82;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        p#viesti {
-            margin-top: 20px;
-            font-weight: bold;
-            min-height: 22px;
-            font-size: 1.05em;
-            color: #d9534f;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-        p#viesti.success {
-            color: #92e071;
-        }
-        p#viesti.info {
-            color: #a4d8fa;
-        }
-        #kuvaContainer {
-            margin-bottom: 15px;
-        }
-        #promptKuva {
-            max-width: 100%;
-            height: auto;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
+
+        /* Logo container */
         #logoContainer {
-            width: 120px;
-            height: 120px;
-            margin-bottom: 20px;
-            text-align: center;
+            width: 100px;
+            height: 100px;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 10;
+            animation: logoGlow 3s ease-in-out infinite alternate;
         }
+
+        @keyframes logoGlow {
+            from { 
+                filter: drop-shadow(0 0 10px rgba(255, 136, 0, 0.3));
+                transform: scale(1);
+            }
+            to { 
+                filter: drop-shadow(0 0 20px rgba(255, 136, 0, 0.6));
+                transform: scale(1.05);
+            }
+        }
+
         #logoContainer img {
             width: 100%;
             height: 100%;
             object-fit: contain;
-            background-color: rgba(255, 255, 255, 0.2);
             border-radius: 50%;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 5px;
-            display: block;
-            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border: 2px solid rgba(255, 136, 0, 0.3);
+            transition: all 0.3s ease;
         }
-        /* Pienemmille näytöille */
+
+        #logoContainer:hover img {
+            border-color: rgba(255, 136, 0, 0.6);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Pääcontainer */
+        .container {
+            background: rgba(30, 30, 30, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.4),
+                0 0 80px rgba(255, 136, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 10;
+            animation: containerFadeIn 0.8s ease-out;
+        }
+
+        @keyframes containerFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Edistymispalkki */
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff8800, #ffaa00);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(255, 136, 0, 0.5);
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #ff8800;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        /* Otsikot ja tekstit */
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            font-weight: 300;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            color: #e0e0e0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        /* Kuvanäyttö */
+        #kuvaContainer {
+            margin-bottom: 25px;
+            text-align: center;
+            position: relative;
+        }
+
+        #promptKuva {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 15px;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.5),
+                0 0 20px rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            background: #000;
+        }
+
+        #promptKuva:hover {
+            transform: scale(1.02);
+            box-shadow: 
+                0 15px 40px rgba(0, 0, 0, 0.6),
+                0 0 30px rgba(255, 136, 0, 0.2);
+        }
+
+        #kuvaTekstiLabel {
+            display: block;
+            margin-top: 15px;
+            font-size: 1.1em;
+            color: #ff8800;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            font-weight: 500;
+        }
+
+        /* Input-kenttä */
+        input[type="text"] {
+            width: 100%;
+            padding: 18px 20px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #ff8800;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                0 0 20px rgba(255, 136, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Napit */
+        button {
+            width: 100%;
+            padding: 18px 30px;
+            background: linear-gradient(135deg, #ff8800, #ffaa00);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 8px 20px rgba(255, 136, 0, 0.3),
+                0 2px 4px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 12px 30px rgba(255, 136, 0, 0.4),
+                0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 
+                0 6px 15px rgba(255, 136, 0, 0.3),
+                0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            background: linear-gradient(135deg, #555, #666);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled::before {
+            display: none;
+        }
+
+        /* Viestit */
+        p#viesti {
+            margin-top: 25px;
+            font-weight: 600;
+            font-size: 1.1em;
+            text-align: center;
+            min-height: 30px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            animation: messageFadeIn 0.3s ease;
+        }
+
+        @keyframes messageFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        p#viesti.success {
+            color: #4CAF50;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        p#viesti.error {
+            color: #f44336;
+            text-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+        }
+
+        p#viesti.info {
+            color: #2196F3;
+            text-shadow: 0 0 10px rgba(33, 150, 243, 0.5);
+        }
+
+        /* Latausindikaattori */
+        .loading-spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #ff8800;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobiili-responsiivisuus */
         @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+
             #logoContainer {
-                width: 90px;
-                height: 90px;
+                width: 80px;
+                height: 80px;
+                margin-bottom: 20px;
+            }
+
+            .container {
+                padding: 30px 25px;
+                border-radius: 15px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 25px;
+            }
+
+            label {
+                font-size: 1.1em;
+                margin-bottom: 12px;
+            }
+
+            input[type="text"] {
+                padding: 16px 18px;
+                font-size: 1em;
+            }
+
+            button {
+                padding: 16px 25px;
+                font-size: 1em;
+            }
+
+            #promptKuva {
+                max-height: 250px;
+            }
+
+            p#viesti {
+                font-size: 1em;
+                margin-top: 20px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .container {
+                padding: 25px 20px;
+            }
+
+            #logoContainer {
+                width: 70px;
+                height: 70px;
+            }
+
+            h1 {
+                font-size: 1.3em;
+            }
+        }
+
+        /* Lisäefektit */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 136, 0, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 136, 0, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 136, 0, 0);
             }
         }
     </style>
@@ -141,18 +421,25 @@
 <body>
 
     <div id="logoContainer">
-        <img src="logo.png" alt="Mikko Kalevi Logo">
+        <img src="https://img.geocaching.com:443/d75362fa-0668-414e-adb7-20a2b35c3eed.png" alt="Mikko Kalevi Logo">
     </div>
 
     <div class="container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">Ladataan...</div>
+        
+        <div class="loading-spinner" id="loadingSpinner"></div>
+        
         <label for="salasanaInput" id="kysymysLabel">Ladataan arvoitusta...</label>
         <div id="kuvaContainer" style="display: none;">
             <img id="promptKuva" src="" alt="Vihje">
+            <p id="kuvaTekstiLabel" style="display: none;"></p>
         </div>
-        <p id="kuvaTekstiLabel" style="display: none; margin-top: 10px; font-size: 1em; color: #dbe0d7; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);"></p>
         <br>
-        <input type="text" id="salasanaInput" autofocus disabled><br>
-        <button onclick="tarkistaSalasana()" disabled>Tarkista</button>
+        <input type="text" id="salasanaInput" autofocus disabled placeholder="Kirjoita vastaus tähän..."><br>
+        <button onclick="tarkistaSalasana()" disabled id="submitButton">Tarkista</button>
         <p id="viesti"></p>
     </div>
 
@@ -194,6 +481,11 @@
         // Hae data Firebasesta
         async function loadPuzzleData() {
             try {
+                // Näytä latausindikaattorit
+                document.getElementById('loadingSpinner').style.display = 'block';
+                document.getElementById('progressText').textContent = 'Ladataan dataa...';
+                document.getElementById('progressFill').style.width = '10%';
+                
                 isLoading = true;
                 kysymysLabel.textContent = "Ladataan arvoitusta...";
                 inputField.disabled = true;
@@ -205,6 +497,9 @@
                     throw new Error('Pelin konfiguraatiota ei löytynyt');
                 }
                 puzzleSetup = gameConfigDoc.data();
+                
+                document.getElementById('progressText').textContent = 'Ladataan vaiheita...';
+                document.getElementById('progressFill').style.width = '50%';
 
                 // Hae kaikki vaiheet
                 const stepsSnapshot = await db.collection('puzzles').get();
@@ -219,16 +514,44 @@
                 puzzleSteps.sort((a, b) => a.stepNumber - b.stepNumber);
                 puzzleSetup.steps = puzzleSteps;
 
+                document.getElementById('progressText').textContent = 'Valmis!';
+                document.getElementById('progressFill').style.width = '100%';
+
                 isLoading = false;
+                
+                // Piilota latausindikaattorit
+                setTimeout(() => {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    document.querySelector('.progress-bar').style.display = 'none';
+                    document.getElementById('progressText').style.display = 'none';
+                }, 500);
+
                 initializePuzzle();
 
             } catch (error) {
                 console.error('Virhe datan lataamisessa:', error);
                 kysymysLabel.textContent = "Virhe: Arvoituksen lataaminen epäonnistui.";
                 viestiElementti.textContent = "Tarkista internet-yhteytesi ja yritä uudelleen.";
+                viestiElementti.className = 'error';
                 inputField.disabled = true;
                 submitButton.disabled = true;
+                
+                // Piilota latausindikaattorit
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('progressText').textContent = 'Virhe!';
+                document.getElementById('progressFill').style.width = '0%';
             }
+        }
+
+        // Päivitä edistymispalkki
+        function updateProgress() {
+            if (!puzzleSetup || !puzzleSetup.steps) return;
+            
+            const progress = ((currentStepIndex + 1) / puzzleSetup.steps.length) * 100;
+            const progressText = `Vaihe ${currentStepIndex + 1} / ${puzzleSetup.steps.length}`;
+            
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressText').textContent = progressText;
         }
 
         function updateChallengeDisplay(challengeImage, challengeText) {
@@ -257,7 +580,8 @@
         function initializePuzzle() {
             if (typeof puzzleSetup === 'undefined' || !puzzleSetup.steps || puzzleSetup.steps.length === 0) {
                 kysymysLabel.textContent = "Virhe: Arvoituksen dataa ei voitu ladata.";
-                viestiElementti.textContent = "Tarkista, että puzzle_data.js on olemassa ja oikein muotoiltu.";
+                viestiElementti.textContent = "Tarkista internet-yhteytesi ja yritä uudelleen.";
+                viestiElementti.className = 'error';
                 inputField.disabled = true;
                 submitButton.disabled = true;
                 return; 
@@ -265,6 +589,11 @@
             puzzleSetup.steps.forEach(step => {
                 step.wrongAttemptsMade = 0;
             });
+
+            // Näytä edistymispalkki
+            document.querySelector('.progress-bar').style.display = 'block';
+            document.getElementById('progressText').style.display = 'block';
+            updateProgress();
 
             const initialStepData = puzzleSetup.steps[currentStepIndex];
             updateChallengeDisplay(initialStepData.challengeImage, initialStepData.challengeText || puzzleSetup.initialPrompt);
@@ -293,11 +622,11 @@
                                     currentStep.responseMessage() :
                                     currentStep.responseMessage;
 
-                // Lisää koodinpätkä responseMessageen, jos on Vaihe 2 tai myöhempi, eikä viimeinen vaihe
+                // Lisää koodinpätkä responseMessageen, jos on Vaihe 2 tai myöhemmin, eikä viimeinen vaihe
                 if (currentStepIndex >= 1 && currentStepIndex < puzzleSetup.steps.length - 1) { // Vaihe 1 on index 0, Vaihe 2 on index 1
                     const codeStartIndex = (currentStepIndex - 1) * 2;
                     const codeSnippet = puzzleSetup.codeString.substring(codeStartIndex, codeStartIndex + 2);
-                    responseMsg = `Koodi: ${codeSnippet} - ${responseMsg}`; // <-- MUUTETTU TÄSTÄ
+                    responseMsg = `Koodi: ${codeSnippet} - ${responseMsg}`;
                 }
                 
                 viestiElementti.textContent = responseMsg;
@@ -311,9 +640,16 @@
                     viestiElementti.className = 'success';
                     inputField.disabled = true;
                     submitButton.disabled = true;
+                    
+                    // Piilota edistymispalkki lopussa
+                    setTimeout(() => {
+                        document.querySelector('.progress-bar').style.display = 'none';
+                        document.getElementById('progressText').style.display = 'none';
+                    }, 2000);
                 } else {
                     // Siirry seuraavaan vaiheeseen
                     currentStepIndex++;
+                    updateProgress();
                     const nextChallengeData = puzzleSetup.steps[currentStepIndex];
                     updateChallengeDisplay(nextChallengeData.challengeImage, nextChallengeData.challengeText);
                     inputField.value = "";
