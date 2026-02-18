@@ -255,13 +255,32 @@
             <div id="configForm"></div>
             <div style="margin-top: 20px; padding: 15px; background: rgba(255, 136, 0, 0.1); border-radius: 8px; border: 1px solid rgba(255, 136, 0, 0.3);">
                 <h3 style="color: #ff8800; margin-bottom: 10px;">🔑 CodeString Hallinta</h3>
-                <p style="color: #f0f0f0; margin-bottom: 15px;">Lisää codeString kenttä pelin konfiguraatioon koodinpätköitä varten.</p>
-                <button onclick="addCodeString()" style="background: linear-gradient(135deg, #ff8800, #ffaa00); padding: 10px 20px; font-size: 0.9em;">
-                    ➕ Lisää CodeString
-                </button>
-                <button onclick="checkCodeString()" style="background: linear-gradient(135deg, #2196F3, #1976D2); padding: 10px 20px; font-size: 0.9em;">
-                    🔍 Tarkista CodeString
-                </button>
+                <p style="color: #f0f0f0; margin-bottom: 15px;">Hallinnoi codeString-kenttää pelin konfiguraatiossa.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                    <button onclick="addCodeString()" style="background: linear-gradient(135deg, #ff8800, #ffaa00); padding: 10px 20px; font-size: 0.9em;">
+                        ➕ Lisää CodeString
+                    </button>
+                    <button onclick="editCodeString()" style="background: linear-gradient(135deg, #2196F3, #1976D2); padding: 10px 20px; font-size: 0.9em;">
+                        ✏️ Muokkaa CodeString
+                    </button>
+                    <button onclick="checkCodeString()" style="background: linear-gradient(135deg, #4CAF50, #388E3C); padding: 10px 20px; font-size: 0.9em;">
+                        🔍 Tarkista CodeString
+                    </button>
+                </div>
+                <div id="codeStringEdit" style="display: none; margin-top: 15px;">
+                    <div class="form-group">
+                        <label for="codeStringInput">Uusi CodeString:</label>
+                        <input type="text" id="codeStringInput" placeholder="Syötä uusi codeString..." style="background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px; border-radius: 5px;">
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button onclick="saveCodeString()" style="background: linear-gradient(135deg, #4CAF50, #388E3C); padding: 8px 16px; font-size: 0.9em;">
+                            💾 Tallenna
+                        </button>
+                        <button onclick="cancelCodeStringEdit()" style="background: linear-gradient(135deg, #f44336, #d32f2f); padding: 8px 16px; font-size: 0.9em;">
+                            ❌ Peruuta
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -397,6 +416,61 @@
                 console.error('Virhe:', error);
                 showStatus('❌ Virhe: ' + error.message, 'error');
             }
+        }
+
+        async function editCodeString() {
+            try {
+                const gameConfigDoc = await db.collection('puzzles').doc('gameConfig').get();
+                
+                if (!gameConfigDoc.exists) {
+                    showStatus('Pelin konfiguraatiota ei löytynyt', 'error');
+                    return;
+                }
+                
+                const data = gameConfigDoc.data();
+                
+                if (!data.codeString) {
+                    showStatus('❌ CodeString ei löydy - lisää se ensin', 'error');
+                    return;
+                }
+                
+                // Näytä muokkauskenttä nykyisellä arvolla
+                document.getElementById('codeStringInput').value = data.codeString;
+                document.getElementById('codeStringEdit').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Virhe:', error);
+                showStatus('❌ Virhe: ' + error.message, 'error');
+            }
+        }
+
+        async function saveCodeString() {
+            try {
+                const newCodeString = document.getElementById('codeStringInput').value.trim();
+                
+                if (!newCodeString) {
+                    showStatus('❌ CodeString ei voi olla tyhjä', 'error');
+                    return;
+                }
+                
+                const gameConfigRef = db.collection('puzzles').doc('gameConfig');
+                await gameConfigRef.update({
+                    codeString: newCodeString
+                });
+                
+                showStatus('✅ CodeString päivitetty onnistuneesti!', 'success');
+                document.getElementById('codeStringEdit').style.display = 'none';
+                loadData(); // Lataa data uudelleen
+                
+            } catch (error) {
+                console.error('Virhe:', error);
+                showStatus('❌ Virhe: ' + error.message, 'error');
+            }
+        }
+
+        function cancelCodeStringEdit() {
+            document.getElementById('codeStringEdit').style.display = 'none';
+            document.getElementById('codeStringInput').value = '';
         }
 
         async function checkCodeString() {
