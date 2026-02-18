@@ -156,10 +156,29 @@
         <p id="viesti"></p>
     </div>
 
-    <script src="puzzle_data.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase konfiguraatio
+        const firebaseConfig = {
+            apiKey: "AIzaSyCaLtaT4J4qFBxEE0bxK8_1yyQDbcwwWfs",
+            authDomain: "lahenalueet.firebaseapp.com",
+            projectId: "lahenalueet",
+            storageBucket: "lahenalueet.firebasestorage.app",
+            messagingSenderId: "237550096622",
+            appId: "1:237550096622:web:4d403d5c40ebf356dea3ff"
+        };
+        
+        // Alusta Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
 
     <script>
-        let currentStepIndex = 0;
+        let puzzleSetup = null;
+        let puzzleSteps = [];
         const inputField = document.getElementById('salasanaInput');
         const viestiElementti = document.getElementById('viesti');
         const kysymysLabel = document.getElementById('kysymysLabel');
@@ -203,7 +222,6 @@
                 step.wrongAttemptsMade = 0;
             });
 
-            currentStepIndex = 0;
             const initialStepData = puzzleSetup.steps[currentStepIndex];
             updateChallengeDisplay(initialStepData.challengeImage, initialStepData.challengeText || puzzleSetup.initialPrompt);
             
@@ -279,7 +297,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            initializePuzzle();
+            loadPuzzleData();
             inputField.addEventListener('keypress', function(event) {
                 if (event.key === 'Enter' && !submitButton.disabled) {
                     tarkistaSalasana();
