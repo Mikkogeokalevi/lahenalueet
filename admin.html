@@ -209,7 +209,7 @@
     <div id="loginScreen" class="container" style="text-align: center; padding: 60px 40px;">
         <h1>🔐 Admin-Kirjautuminen</h1>
         <p style="margin: 30px 0; color: #ccc;">Tämä sivu vaatii kirjautumista.</p>
-        <button onclick="checkAdminAccess()" style="max-width: 300px; margin: 0 auto;">
+        <button onclick="showLoginForm()" style="max-width: 300px; margin: 0 auto;">
             🔑 Kirjaudu sisään
         </button>
         <br><br>
@@ -260,48 +260,75 @@
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     
     <script>
-        // Admin-salasanansuojaus - parempi tapa
-        function checkAdminAccess() {
-            // Yksinkertainen "salaisuus" - kysymys ja vastaus
-            const questions = [
-                { question: "Mikä on Lahestä suurin järvi?", answer: "vesijärvi" },
-                { question: "Mikä vuosi Lahestä tuli kaupungiksi?", answer: "1905" },
-                { question: "Mikä on Lahen vaakunan väri?", answer: "punainen" }
-            ];
+        // Firebase Authentication -kirjautuminen
+        let auth = null;
+        let db = null;
+
+        // Sallitut sähköpostit
+        const ALLOWED_EMAILS = ['toni@kauppinen.info'];
+
+        function initializeFirebase() {
+            // Firebase konfiguraatio
+            const firebaseConfig = {
+                apiKey: "AIzaSyCaLtaT4J4qFBxEE0bxK8_1yyQDbcwwWfs",
+                authDomain: "lahenalueet.firebaseapp.com",
+                projectId: "lahenalueet",
+                storageBucket: "lahenalueet.firebasestorage.app",
+                messagingSenderId: "237550096622",
+                appId: "1:237550096622:web:4d403d5c40ebf356dea3ff"
+            };
             
-            const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
-            const answer = prompt(`Kirjoita vastaus: ${randomQuestion.question}`);
+            // Alusta Firebase
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+
+            // Tarkista kirjautumistila
+            auth.onAuthStateChanged(user => {
+                if (user && ALLOWED_EMAILS.includes(user.email)) {
+                    // Kirjautunut ja sallittu käyttäjä
+                    document.getElementById('adminContent').style.display = 'block';
+                    document.getElementById('loginScreen').style.display = 'none';
+                    loadData(); // Lataa data kun kirjautuminen onnistui
+                } else {
+                    // Ei kirjautunut tai ei sallittu käyttäjä
+                    document.getElementById('adminContent').style.display = 'none';
+                    document.getElementById('loginScreen').style.display = 'block';
+                    if (user) {
+                        // Kirjautunut mutta ei sallittu käyttäjä -> uloskirjauta
+                        auth.signOut();
+                        alert('Käyttäjä ei ole sallittu!');
+                    }
+                }
+            });
+        }
+
+        function showLoginForm() {
+            const email = prompt('Syötä sähköpostisi:');
+            const password = prompt('Syötä salasanasi:');
             
-            if (answer && answer.toLowerCase().trim() === randomQuestion.answer) {
-                // Vastaus oikein, näytä admin-paneeli
-                document.getElementById('adminContent').style.display = 'block';
-                document.getElementById('loginScreen').style.display = 'none';
-                loadData(); // Lataa data kun kirjautuminen onnistui
-            } else if (answer !== null) {
-                alert('Väärä vastaus! Yritä uudelleen.');
-                checkAdminAccess(); // Kysy uudelleen
-            } else {
-                // Käyttäjä painoi Peruuta
-                window.location.href = 'index.html'; // Palaa pääsivulle
+            if (email && password) {
+                auth.signInWithEmailAndPassword(email, password)
+                    .catch(error => {
+                        console.error('Kirjautumisvirhe:', error);
+                        alert('Kirjautuminen epäonnistui: ' + error.message);
+                    });
             }
         }
 
-        // Firebase konfiguraatio
-        const firebaseConfig = {
-            apiKey: "AIzaSyCaLtaT4J4qFBxEE0bxK8_1yyQDbcwwWfs",
-            authDomain: "lahenalueet.firebaseapp.com",
-            projectId: "lahenalueet",
-            storageBucket: "lahenalueet.firebasestorage.app",
-            messagingSenderId: "237550096622",
-            appId: "1:237550096622:web:4d403d5c40ebf356dea3ff"
-        };
-        
-        // Alusta Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        function logout() {
+            auth.signOut().then(() => {
+                // Uloskirjautuminen onnistui
+                document.getElementById('adminContent').style.display = 'none';
+                document.getElementById('loginScreen').style.display = 'block';
+            }).catch(error => {
+                console.error('Uloskirjautumisvirhe:', error);
+            });
+        }
 
         let gameConfig = null;
         let steps = [];
@@ -619,8 +646,7 @@
 
         // Tarkista kirjautuminen sivun latautuessa
         document.addEventListener('DOMContentLoaded', () => {
-            // Älä lataa dataa automaattisesti, vaan näytä kirjautumisnäyttö
-            // Käyttäjän täytyy kirjautua ensin
+            initializeFirebase();
         });
     </script>
 </body>
