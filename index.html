@@ -434,9 +434,9 @@
         
         <label for="salasanaInput" id="kysymysLabel">Ladataan arvoitusta...</label>
         <div id="kuvaContainer" style="display: none;">
+            <p id="kuvaViesti" style="margin-bottom: 15px;"></p>
             <img id="promptKuva" src="" alt="Vihje">
             <p id="kuvaTekstiLabel" style="display: none;"></p>
-            <p id="kuvaViesti" style="margin-top: 15px;"></p>
         </div>
         <br>
         <input type="text" id="salasanaInput" autofocus disabled placeholder="Kirjoita vastaus tähän..."><br>
@@ -769,9 +769,9 @@
                     currentStepIndex++;
                     const nextStepData = puzzleSetup.steps[currentStepIndex];
                     
-                    // Näytä viesti ENSIN
+                    // Aseta uusi viesti
                     if (currentStep.challengeImage) {
-                        // Kuva on näkyvissä - näytä viesti kuvan alla
+                        // Kuva on näkyvissä - näytä viesti kuvan PÄÄLLÄ
                         kuvaViestiElementti.textContent = responseMsg;
                         kuvaViestiElementti.className = 'info';
                     } else {
@@ -780,8 +780,8 @@
                         viestiElementti.className = 'info';
                     }
                     
-                    // Päivitä näyttö mutta SÄILYTÄ viesti
-                    updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt, true);
+                    // Päivitä näyttö mutta NOLLAA vanha viesti
+                    updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt, false);
                     inputField.value = "";
                     inputField.focus();
                     updateProgress();
