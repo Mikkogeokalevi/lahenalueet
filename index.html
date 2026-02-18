@@ -708,17 +708,11 @@
                                     currentStep.responseMessage;
 
                 // Lisää koodinpätkä jos on kuva ja codeString on olemassa
-                console.log('DEBUG: currentStep.challengeImage:', currentStep.challengeImage);
-                console.log('DEBUG: puzzleSetup.codeString:', puzzleSetup.codeString);
-                console.log('DEBUG: currentStep.stepNumber:', currentStep.stepNumber);
-                
                 if (currentStep.challengeImage && puzzleSetup.codeString) {
                     const codePart = getCodePart(currentStep.stepNumber);
-                    console.log('DEBUG: codePart:', codePart);
                     if (codePart) {
                         collectedCodeParts.push(codePart);
                         responseMsg = `🔑 Koodinpätkä: ${codePart} - ${responseMsg}`;
-                        console.log('DEBUG: responseMsg:', responseMsg);
                         
                         // Tarkista onko tämä viimeinen kuva
                         const imageSteps = puzzleSetup.steps.filter(step => step.challengeImage && step.stepNumber > 0);
@@ -735,19 +729,16 @@
                 }
                 
                 // Näytä viesti oikeassa paikassa
-                console.log('DEBUG: Näytetään viesti:', responseMsg);
                 if (currentStep.challengeImage) {
-                    // Kuva on näkyvissä - näytä viesti kuvan alla
-                    console.log('DEBUG: Näytetään kuva-viestissä');
+                    // Kuva oli näkyvissä - näytä viesti kuvan päällä
                     kuvaViestiElementti.textContent = responseMsg;
                     kuvaViestiElementti.className = 'info';
-                    console.log('DEBUG: kuvaViestiElementti.textContent:', kuvaViestiElementti.textContent);
+                    kuvaViestiElementti.style.display = 'block';
                 } else {
                     // Ei kuvaa - näytä viesti normaalisti
-                    console.log('DEBUG: Näytetään normaali viesti');
                     viestiElementti.textContent = responseMsg;
                     viestiElementti.className = 'info';
-                    console.log('DEBUG: viestiElementti.textContent:', viestiElementti.textContent);
+                    viestiElementti.style.display = 'block';
                 }
 
                 currentStep.wrongAttemptsMade = 0; 
