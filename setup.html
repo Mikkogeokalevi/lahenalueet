@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Data Setup</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        #log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase Data Setup</h1>
+        <p>Tämä skripti siirtää kaikki arvoitusten tiedot Firebase Firestore -tietokantaan.</p>
+        
+        <button onclick="startMigration()">🚀 Aloita datan siirto</button>
+        <button onclick="clearLog()">🧹 Tyhjennä logi</button>
+        
+        <div id="log"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase konfiguraatio
+        const firebaseConfig = {
+            apiKey: "AIzaSyCaLtaT4J4qFBxEE0bxK8_1yyQDbcwwWfs",
+            authDomain: "lahenalueet.firebaseapp.com",
+            projectId: "lahenalueet",
+            storageBucket: "lahenalueet.firebasestorage.app",
+            messagingSenderId: "237550096622",
+            appId: "1:237550096622:web:4d403d5c40ebf356dea3ff"
+        };
+
+        // Alusta Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Arvoitusten data
+        const puzzleData = {
+            initialPrompt: "Kirjoita salasana",
+            wrongInputMessage: "Väärin meni! Palataan takaisin alkuun.",
+            finalFailMessage: "Liian monta väärää yritystä!",
+            maxWrongAttempts: 3,
+            steps: [
+                {
+                    stepNumber: 0,
+                    expectedInput: "salasana",
+                    responseMessage: "Oikein! Tässä ensimmäinen kuva-arvoitus:",
+                    challengeText: null,
+                    challengeImage: null,
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 1,
+                    expectedInput: "Jalkaranta",
+                    responseMessage: "Hienoa! Jatka seuraavaan:",
+                    challengeText: "Kirjoita kuvasta selviävä kaupunginosa:",
+                    challengeImage: "jalkaranta.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 2,
+                    expectedInput: "Ämmälä",
+                    responseMessage: "Hyvin menee! Tässä seuraava:",
+                    challengeText: "Mikä kaupunginosa kuvassa on:",
+                    challengeImage: "ammala.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 3,
+                    expectedInput: "Kottero",
+                    responseMessage: "Loistavaa! Seuraava odottaa:",
+                    challengeText: "Tunnista kuvasta kaupunginosa:",
+                    challengeImage: "kottero.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 4,
+                    expectedInput: "kukonkoivu",
+                    responseMessage: "Melkein perillä! Tässä vielä ainakin yksi:",
+                    challengeText: "Mistä päin kaupunkia tämä kuva on:",
+                    challengeImage: "kukonkoivu.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 5,
+                    expectedInput: "Radiomäki",
+                    responseMessage: "Hienoa!",
+                    challengeText: "Kaupunginosa kuvassa:",
+                    challengeImage: "radiomaki.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 6,
+                    expectedInput: "Jokimaa",
+                    responseMessage: "Jatka samaan malliin!",
+                    challengeText: "Tunnista kaupunginosa:",
+                    challengeImage: "jokimaa.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 7,
+                    expectedInput: "Karjusaari",
+                    responseMessage: "Se alkaa olla hallussa!",
+                    challengeText: "Mikä kaupunginosa tässä:",
+                    challengeImage: "karjusaari.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 8,
+                    expectedInput: "keijupuisto",
+                    responseMessage: "Loistavaa!",
+                    challengeText: "Tämä kaupunginosa on:",
+                    challengeImage: "keijupuisto.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 9,
+                    expectedInput: "leponiemi",
+                    responseMessage: "Hyvä! ",
+                    challengeText: "Kaupunginosa?:",
+                    challengeImage: "leponiemi.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 10,
+                    expectedInput: "metsäkangas",
+                    responseMessage: "Puolivälikö häämöttää vai montako näitä on! ",
+                    challengeText: "Tunnista kuvasta kaupunginosa:",
+                    challengeImage: "metsakangas.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 11,
+                    expectedInput: "patoniitty",
+                    responseMessage: "Et ole yksin!",
+                    challengeText: "Mikä kaupunginosa tässä:",
+                    challengeImage: "patoniitty.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 12,
+                    expectedInput: "kolava",
+                    responseMessage: "Hyvin vedetty!",
+                    challengeText: "missä kaupunginosassa olla tässä:",
+                    challengeImage: "kolava.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 13,
+                    expectedInput: "koivukumpu",
+                    responseMessage: "Mahtavaa! ",
+                    challengeText: "Tunnista kaupunginosa:",
+                    challengeImage: "koivukumpu.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 14,
+                    expectedInput: "venetsia",
+                    responseMessage: "Vielä jaksaa! ",
+                    challengeText: "Missä olemme tässä:",
+                    challengeImage: "venetsia.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 15,
+                    expectedInput: "sydänkangas",
+                    responseMessage: "Kohta valmis! ehkä?",
+                    challengeText: "Tämäkin kaupunginosa tarvitaan jotta pääsee eteenpäin:",
+                    challengeImage: "sydankangas.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 16,
+                    expectedInput: "pesäkallio",
+                    responseMessage: "Enää muutamia! ",
+                    challengeText: "Kaupunginosa:",
+                    challengeImage: "pesakallio.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 17,
+                    expectedInput: "vartiolaakso",
+                    responseMessage: "Melkein perillä!",
+                    challengeText: "Tunnista kaupunginosa:",
+                    challengeImage: "vartiolaakso.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 18,
+                    expectedInput: "kukonkoski",
+                    responseMessage: "Viimeiset vedot! ",
+                    challengeText: "Missä kaupungiosassa olla tässä:",
+                    challengeImage: "kukonkoski.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 19,
+                    expectedInput: "myllypohja",
+                    responseMessage: "Viimeinen kuva-arvoitus kohta?!",
+                    challengeText: "Kaupunginosa :",
+                    challengeImage: "myllypohja.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 20,
+                    expectedInput: "kuusiniitty",
+                    responseMessage: "Joko tämä jo olis tässä?",
+                    challengeText: "Kaupunginosa:",
+                    challengeImage: "kuusiniitty.jpg",
+                    maxWrongAttempts: 3
+                },
+                {
+                    stepNumber: 21,
+                    expectedInput: "Mikkokalevi",
+                    responseMessage: "Erinomaista työtä! Olet ratkaissut kaikki kuvat ja loppu kysymyksen! Kirjoita chekkeriin \"geokätköilijä on nero\".",
+                    challengeText: "Onneksi olkoon, kaikki tehtävät suoritettu! Kirjoita vielä että kenen mysteeri tämä saadaksesi vastauksen chekkerille!",
+                    challengeImage: null,
+                    maxWrongAttempts: 3
+                }
+            ]
+        };
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        async function startMigration() {
+            const button = document.querySelector('button');
+            button.disabled = true;
+            button.textContent = '⏳ Siirretään dataa...';
+
+            try {
+                log('🔥 Yhdistetään Firebaseen...', 'info');
+                
+                // Luo gameConfig dokumentti
+                log('📝 Luodaan gameConfig dokumentti...', 'info');
+                await db.collection('puzzles').doc('gameConfig').set({
+                    initialPrompt: puzzleData.initialPrompt,
+                    wrongInputMessage: puzzleData.wrongInputMessage,
+                    finalFailMessage: puzzleData.finalFailMessage,
+                    maxWrongAttempts: puzzleData.maxWrongAttempts
+                });
+                log('✅ gameConfig luotu onnistuneesti!', 'success');
+
+                // Luo vaiheet batch-operaatiolla
+                log('📋 Siirretään vaiheita Firebaseen...', 'info');
+                const batch = db.batch();
+                
+                puzzleData.steps.forEach((step) => {
+                    const stepRef = db.collection('puzzles').collection('steps').doc(`step_${step.stepNumber}`);
+                    batch.set(stepRef, step);
+                });
+
+                await batch.commit();
+                log(`✅ Kaikki ${puzzleData.steps.length} vaihetta siirretty onnistuneesti!`, 'success');
+                log('🎉 Datansiirto valmis!', 'success');
+                log('🔗 Voit nyt sulkea tämän sivun ja päivittää pääsivun käyttämään Firebasea!', 'info');
+
+            } catch (error) {
+                log(`❌ Virhe: ${error.message}`, 'error');
+                console.error('Virhe datan siirrossa:', error);
+            } finally {
+                button.disabled = false;
+                button.textContent = '🚀 Aloita datan siirto';
+            }
+        }
+    </script>
+</body>
+</html>
