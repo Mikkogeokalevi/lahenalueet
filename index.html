@@ -666,6 +666,7 @@
         }
 
         function initializePuzzle() {
+            console.log('DEBUG: initializePuzzle - initialPrompt:', puzzleSetup.initialPrompt);
             if (typeof puzzleSetup === 'undefined' || !puzzleSetup.steps || puzzleSetup.steps.length === 0) {
                 kysymysLabel.textContent = "Virhe: Arvoituksen dataa ei voitu ladata.";
                 viestiElementti.textContent = "Tarkista internet-yhteytesi ja yritä uudelleen.";
