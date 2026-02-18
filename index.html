@@ -655,8 +655,8 @@
                 // Näytä normaali viesti-elementti
                 viestiElementti.style.display = 'block';
             } else {
-                kysymysLabel.textContent = puzzleSetup.initialPrompt;
-                kysymysLabel.display = 'block';
+                kysymysLabel.textContent = puzzleSetup.initialPrompt || "Kirjoita tunnussana:";
+                kysymysLabel.style.display = 'block';
                 // Näytä normaali viesti-elementti
                 viestiElementti.style.display = 'block';
             }
@@ -789,11 +789,15 @@
                 // Näytä virheviesti oikeassa paikassa
                 if (currentStep.challengeImage) {
                     // Kuva on näkyvissä - näytä viesti kuvan alla
-                    kuvaViestiElementti.textContent = errorMsg;
+                    const maxAttempts = currentStep.maxWrongAttempts || 3;
+                    const attemptsLeft = maxAttempts - currentStep.wrongAttemptsMade;
+                    kuvaViestiElementti.textContent = `${errorMsg} (${currentStep.wrongAttemptsMade}/${maxAttempts})`;
                     kuvaViestiElementti.className = 'error';
                 } else {
                     // Ei kuvaa - näytä viesti normaalisti
-                    viestiElementti.textContent = errorMsg;
+                    const maxAttempts = currentStep.maxWrongAttempts || 3;
+                    const attemptsLeft = maxAttempts - currentStep.wrongAttemptsMade;
+                    viestiElementti.textContent = `${errorMsg} (${currentStep.wrongAttemptsMade}/${maxAttempts})`;
                     viestiElementti.className = 'error';
                 }
 
