@@ -642,7 +642,7 @@
         async function saveConfig() {
             try {
                 const config = {
-                    initialPrompt: document.getElementById('initialPrompt').value,
+                    initialPrompt: document.getElementById('initialPrompt').value || 'Kirjoita tunnussana:',
                     wrongInputMessage: document.getElementById('wrongInputMessage').value,
                     finalFailMessage: document.getElementById('finalFailMessage').value,
                     maxWrongAttempts: parseInt(document.getElementById('maxWrongAttempts').value)
