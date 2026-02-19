@@ -687,6 +687,19 @@
         }
 
         function updateChallengeDisplay(challengeImage, challengeText, keepMessage = false) {
+            // Tallenna nykyiset viestit jos pitää säilyttää
+            let savedKuvaViesti = '';
+            let savedKuvaViestiClass = '';
+            let savedViesti = '';
+            let savedViestiClass = '';
+            
+            if (keepMessage) {
+                savedKuvaViesti = kuvaViestiElementti.textContent;
+                savedKuvaViestiClass = kuvaViestiElementti.className;
+                savedViesti = viestiElementti.textContent;
+                savedViestiClass = viestiElementti.className;
+            }
+            
             // Lisää fade-out efekti
             const container = document.querySelector('.container');
             container.classList.add('fade-out');
@@ -718,16 +731,34 @@
                     }
                     // Näytä kuvan PÄÄLLÄ oleva viesti-elementti
                     kuvaViestiElementti.style.display = 'block';
+                    
+                    // Palauta tallennettu viesti
+                    if (keepMessage && savedKuvaViesti) {
+                        kuvaViestiElementti.textContent = savedKuvaViesti;
+                        kuvaViestiElementti.className = savedKuvaViestiClass;
+                    }
                 } else if (challengeText) {
                     kysymysLabel.textContent = challengeText; 
                     kysymysLabel.style.display = 'block';
                     // Näytä normaali viesti-elementti
                     viestiElementti.style.display = 'block';
+                    
+                    // Palauta tallennettu viesti
+                    if (keepMessage && savedViesti) {
+                        viestiElementti.textContent = savedViesti;
+                        viestiElementti.className = savedViestiClass;
+                    }
                 } else {
                     kysymysLabel.textContent = puzzleSetup.initialPrompt || "Kirjoita tunnussana:";
                     kysymysLabel.style.display = 'block';
                     // Näytä normaali viesti-elementti
                     viestiElementti.style.display = 'block';
+                    
+                    // Palauta tallennettu viesti
+                    if (keepMessage && savedViesti) {
+                        viestiElementti.textContent = savedViesti;
+                        viestiElementti.className = savedViestiClass;
+                    }
                 }
                 
                 // Lisää fade-in efekti
