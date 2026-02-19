@@ -414,21 +414,65 @@
             }
         }
 
-        /* Lisäefektit */
-        .pulse {
-            animation: pulse 2s infinite;
+        /* Siirtymäanimaatiot */
+        .fade-out {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
         }
-
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(255, 136, 0, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(255, 136, 0, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(255, 136, 0, 0);
-            }
+        
+        .fade-in {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.4s ease;
+        }
+        
+        .slide-out-left {
+            transform: translateX(-100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .slide-in-right {
+            transform: translateX(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .slide-in-center {
+            transform: translateX(0);
+            opacity: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .glow-success {
+            animation: glowSuccess 0.8s ease;
+        }
+        
+        @keyframes glowSuccess {
+            0% { box-shadow: 0 0 5px rgba(76, 175, 80, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(76, 175, 80, 0.8), 0 0 30px rgba(76, 175, 80, 0.4); }
+            100% { box-shadow: 0 0 5px rgba(76, 175, 80, 0.3); }
+        }
+        
+        .glow-error {
+            animation: glowError 0.8s ease;
+        }
+        
+        @keyframes glowError {
+            0% { box-shadow: 0 0 5px rgba(244, 67, 54, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(244, 67, 54, 0.8), 0 0 30px rgba(244, 67, 54, 0.4); }
+            100% { box-shadow: 0 0 5px rgba(244, 67, 54, 0.3); }
         }
     </style>
 </head>
@@ -643,42 +687,58 @@
         }
 
         function updateChallengeDisplay(challengeImage, challengeText, keepMessage = false) {
-            kysymysLabel.style.display = 'none'; 
-            kuvaContainer.style.display = 'none';
-            promptKuva.src = "";
-            kuvaTekstiLabel.style.display = 'none';
-            kuvaTekstiLabel.textContent = "";
+            // Lisää fade-out efekti
+            const container = document.querySelector('.container');
+            container.classList.add('fade-out');
+            
+            // Odota animaatio ja päivitä sisältö
+            setTimeout(() => {
+                kysymysLabel.style.display = 'none'; 
+                kuvaContainer.style.display = 'none';
+                promptKuva.src = "";
+                kuvaTekstiLabel.style.display = 'none';
+                kuvaTekstiLabel.textContent = "";
 
-            // Nollaa viestit vain jos ei pidä säilyttää
-            if (!keepMessage) {
-                viestiElementti.style.display = 'none';
-                viestiElementti.textContent = '';
-                viestiElementti.className = '';
-                kuvaViestiElementti.style.display = 'none';
-                kuvaViestiElementti.textContent = '';
-                kuvaViestiElementti.className = '';
-            }
-
-            if (challengeImage && challengeImage !== 'null' && challengeImage.trim() !== '') {
-                promptKuva.src = challengeImage;
-                kuvaContainer.style.display = 'block';
-                if (challengeText) {
-                    kuvaTekstiLabel.textContent = challengeText;
-                    kuvaTekstiLabel.style.display = 'block';
+                // Nollaa viestit vain jos ei pidä säilyttää
+                if (!keepMessage) {
+                    viestiElementti.style.display = 'none';
+                    viestiElementti.textContent = '';
+                    viestiElementti.className = '';
+                    kuvaViestiElementti.style.display = 'none';
+                    kuvaViestiElementti.textContent = '';
+                    kuvaViestiElementti.className = '';
                 }
-                // Näytä kuvan PÄÄLLÄ oleva viesti-elementti
-                kuvaViestiElementti.style.display = 'block';
-            } else if (challengeText) {
-                kysymysLabel.textContent = challengeText; 
-                kysymysLabel.style.display = 'block';
-                // Näytä normaali viesti-elementti
-                viestiElementti.style.display = 'block';
-            } else {
-                kysymysLabel.textContent = puzzleSetup.initialPrompt || "Kirjoita tunnussana:";
-                kysymysLabel.style.display = 'block';
-                // Näytä normaali viesti-elementti
-                viestiElementti.style.display = 'block';
-            }
+
+                if (challengeImage && challengeImage !== 'null' && challengeImage.trim() !== '') {
+                    promptKuva.src = challengeImage;
+                    kuvaContainer.style.display = 'block';
+                    if (challengeText) {
+                        kuvaTekstiLabel.textContent = challengeText;
+                        kuvaTekstiLabel.style.display = 'block';
+                    }
+                    // Näytä kuvan PÄÄLLÄ oleva viesti-elementti
+                    kuvaViestiElementti.style.display = 'block';
+                } else if (challengeText) {
+                    kysymysLabel.textContent = challengeText; 
+                    kysymysLabel.style.display = 'block';
+                    // Näytä normaali viesti-elementti
+                    viestiElementti.style.display = 'block';
+                } else {
+                    kysymysLabel.textContent = puzzleSetup.initialPrompt || "Kirjoita tunnussana:";
+                    kysymysLabel.style.display = 'block';
+                    // Näytä normaali viesti-elementti
+                    viestiElementti.style.display = 'block';
+                }
+                
+                // Lisää fade-in efekti
+                container.classList.remove('fade-out');
+                container.classList.add('fade-in');
+                
+                // Poista fade-in luokka animaation jälkeen
+                setTimeout(() => {
+                    container.classList.remove('fade-in');
+                }, 400);
+            }, 200);
         }
 
         function initializePuzzle() {
@@ -755,11 +815,23 @@
                     kuvaViestiElementti.textContent = responseMsg;
                     kuvaViestiElementti.className = 'info';
                     kuvaViestiElementti.style.display = 'block';
+                    
+                    // Lisää glow-efekti input-kentälle
+                    inputField.classList.add('glow-success');
+                    setTimeout(() => {
+                        inputField.classList.remove('glow-success');
+                    }, 800);
                 } else {
                     // Ei kuvaa - näytä viesti normaalisti
                     viestiElementti.textContent = responseMsg;
                     viestiElementti.className = 'info';
                     viestiElementti.style.display = 'block';
+                    
+                    // Lisää glow-efekti input-kentälle
+                    inputField.classList.add('glow-success');
+                    setTimeout(() => {
+                        inputField.classList.remove('glow-success');
+                    }, 800);
                 }
 
                 currentStep.wrongAttemptsMade = 0; 
@@ -816,12 +888,24 @@
                     const attemptsLeft = maxAttempts - currentStep.wrongAttemptsMade;
                     kuvaViestiElementti.textContent = `${errorMsg} (${currentStep.wrongAttemptsMade}/${maxAttempts})`;
                     kuvaViestiElementti.className = 'error';
+                    
+                    // Lisää shake-animaatio input-kentälle
+                    inputField.classList.add('shake');
+                    setTimeout(() => {
+                        inputField.classList.remove('shake');
+                    }, 500);
                 } else {
                     // Ei kuvaa - näytä viesti normaalisti
                     const maxAttempts = currentStep.maxWrongAttempts || 3;
                     const attemptsLeft = maxAttempts - currentStep.wrongAttemptsMade;
                     viestiElementti.textContent = `${errorMsg} (${currentStep.wrongAttemptsMade}/${maxAttempts})`;
                     viestiElementti.className = 'error';
+                    
+                    // Lisää shake-animaatio input-kentälle
+                    inputField.classList.add('shake');
+                    setTimeout(() => {
+                        inputField.classList.remove('shake');
+                    }, 500);
                 }
 
                 currentStep.wrongAttemptsMade = (currentStep.wrongAttemptsMade || 0) + 1;
