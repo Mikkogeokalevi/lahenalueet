@@ -324,32 +324,18 @@
         /* Latausindikaattori */
         .loading-spinner {
             display: none;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #4CAF50;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
+            width: 40px;
+            height: 40px;
             margin: 20px auto;
-            box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #ff8800;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
-        }
-
-        .loading-text {
-            animation: pulse 1.5s ease-in-out infinite;
-            color: #4CAF50;
-            font-weight: bold;
-            margin-top: 15px;
         }
 
         /* Mobiili-responsiivisuus */
@@ -414,65 +400,21 @@
             }
         }
 
-        /* Siirtymäanimaatiot */
-        .fade-out {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.4s ease;
+        /* Lisäefektit */
+        .pulse {
+            animation: pulse 2s infinite;
         }
-        
-        .fade-in {
-            opacity: 1;
-            transform: translateY(0);
-            transition: all 0.4s ease;
-        }
-        
-        .slide-out-left {
-            transform: translateX(-100px);
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-        
-        .slide-in-right {
-            transform: translateX(100px);
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-        
-        .slide-in-center {
-            transform: translateX(0);
-            opacity: 1;
-            transition: all 0.3s ease;
-        }
-        
-        .shake {
-            animation: shake 0.5s ease-in-out;
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-        
-        .glow-success {
-            animation: glowSuccess 0.8s ease;
-        }
-        
-        @keyframes glowSuccess {
-            0% { box-shadow: 0 0 5px rgba(76, 175, 80, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(76, 175, 80, 0.8), 0 0 30px rgba(76, 175, 80, 0.4); }
-            100% { box-shadow: 0 0 5px rgba(76, 175, 80, 0.3); }
-        }
-        
-        .glow-error {
-            animation: glowError 0.8s ease;
-        }
-        
-        @keyframes glowError {
-            0% { box-shadow: 0 0 5px rgba(244, 67, 54, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(244, 67, 54, 0.8), 0 0 30px rgba(244, 67, 54, 0.4); }
-            100% { box-shadow: 0 0 5px rgba(244, 67, 54, 0.3); }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 136, 0, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 136, 0, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 136, 0, 0);
+            }
         }
     </style>
 </head>
@@ -489,7 +431,6 @@
         <div class="progress-text" id="progressText">Ladataan...</div>
         
         <div class="loading-spinner" id="loadingSpinner"></div>
-        <div class="loading-text" id="loadingText">Valmistellaan mysteeriä...</div>
         
         <label for="salasanaInput" id="kysymysLabel">Ladataan arvoitusta...</label>
         <div id="kuvaContainer" style="display: none;">
@@ -545,8 +486,7 @@
             try {
                 // Näytä latausindikaattorit
                 document.getElementById('loadingSpinner').style.display = 'block';
-                document.getElementById('loadingText').style.display = 'block';
-                document.getElementById('progressText').textContent = 'Yhdistetään mysteeriin...';
+                document.getElementById('progressText').textContent = 'Ladataan dataa...';
                 document.getElementById('progressFill').style.width = '10%';
                 
                 isLoading = true;
@@ -561,8 +501,7 @@
                 }
                 puzzleSetup = gameConfigDoc.data();
                 
-                document.getElementById('progressText').textContent = 'Kerätään vihjeitä...';
-                document.getElementById('loadingText').textContent = 'Salaisuuksia paljastuu...';
+                document.getElementById('progressText').textContent = 'Ladataan vaiheita...';
                 document.getElementById('progressFill').style.width = '50%';
 
                 // Hae kaikki vaiheet
@@ -578,8 +517,7 @@
                 puzzleSteps.sort((a, b) => a.stepNumber - b.stepNumber);
                 puzzleSetup.steps = puzzleSteps;
 
-                document.getElementById('progressText').textContent = 'Mysteeri valmis!';
-                document.getElementById('loadingText').textContent = 'Seikkailu voi alkaa...';
+                document.getElementById('progressText').textContent = 'Valmis!';
                 document.getElementById('progressFill').style.width = '100%';
 
                 isLoading = false;
@@ -587,7 +525,6 @@
                 // Piilota latausindikaattorit
                 setTimeout(() => {
                     document.getElementById('loadingSpinner').style.display = 'none';
-                    document.getElementById('loadingText').style.display = 'none';
                     document.querySelector('.progress-bar').style.display = 'none';
                     document.getElementById('progressText').style.display = 'none';
                 }, 500);
@@ -687,89 +624,42 @@
         }
 
         function updateChallengeDisplay(challengeImage, challengeText, keepMessage = false) {
-            // Tallenna nykyiset viestit jos pitää säilyttää
-            let savedKuvaViesti = '';
-            let savedKuvaViestiClass = '';
-            let savedViesti = '';
-            let savedViestiClass = '';
-            
-            if (keepMessage) {
-                savedKuvaViesti = kuvaViestiElementti.textContent;
-                savedKuvaViestiClass = kuvaViestiElementti.className;
-                savedViesti = viestiElementti.textContent;
-                savedViestiClass = viestiElementti.className;
+            kysymysLabel.style.display = 'none'; 
+            kuvaContainer.style.display = 'none';
+            promptKuva.src = "";
+            kuvaTekstiLabel.style.display = 'none';
+            kuvaTekstiLabel.textContent = "";
+
+            // Nollaa viestit vain jos ei pidä säilyttää
+            if (!keepMessage) {
+                viestiElementti.style.display = 'none';
+                viestiElementti.textContent = '';
+                viestiElementti.className = '';
+                kuvaViestiElementti.style.display = 'none';
+                kuvaViestiElementti.textContent = '';
+                kuvaViestiElementti.className = '';
             }
-            
-            // Lisää fade-out efekti
-            const container = document.querySelector('.container');
-            container.classList.add('fade-out');
-            
-            // Odota animaatio ja päivitä sisältö
-            setTimeout(() => {
-                kysymysLabel.style.display = 'none'; 
-                kuvaContainer.style.display = 'none';
-                promptKuva.src = "";
-                kuvaTekstiLabel.style.display = 'none';
-                kuvaTekstiLabel.textContent = "";
 
-                // Nollaa viestit vain jos ei pidä säilyttää
-                if (!keepMessage) {
-                    viestiElementti.style.display = 'none';
-                    viestiElementti.textContent = '';
-                    viestiElementti.className = '';
-                    kuvaViestiElementti.style.display = 'none';
-                    kuvaViestiElementti.textContent = '';
-                    kuvaViestiElementti.className = '';
+            if (challengeImage && challengeImage !== 'null' && challengeImage.trim() !== '') {
+                promptKuva.src = challengeImage;
+                kuvaContainer.style.display = 'block';
+                if (challengeText) {
+                    kuvaTekstiLabel.textContent = challengeText;
+                    kuvaTekstiLabel.style.display = 'block';
                 }
-
-                if (challengeImage && challengeImage !== 'null' && challengeImage.trim() !== '') {
-                    promptKuva.src = challengeImage;
-                    kuvaContainer.style.display = 'block';
-                    if (challengeText) {
-                        kuvaTekstiLabel.textContent = challengeText;
-                        kuvaTekstiLabel.style.display = 'block';
-                    }
-                    // Näytä kuvan PÄÄLLÄ oleva viesti-elementti
-                    kuvaViestiElementti.style.display = 'block';
-                    
-                    // Palauta tallennettu viesti
-                    if (keepMessage && savedKuvaViesti) {
-                        kuvaViestiElementti.textContent = savedKuvaViesti;
-                        kuvaViestiElementti.className = savedKuvaViestiClass;
-                    }
-                } else if (challengeText) {
-                    kysymysLabel.textContent = challengeText; 
-                    kysymysLabel.style.display = 'block';
-                    // Näytä normaali viesti-elementti
-                    viestiElementti.style.display = 'block';
-                    
-                    // Palauta tallennettu viesti
-                    if (keepMessage && savedViesti) {
-                        viestiElementti.textContent = savedViesti;
-                        viestiElementti.className = savedViestiClass;
-                    }
-                } else {
-                    kysymysLabel.textContent = puzzleSetup.initialPrompt || "Kirjoita tunnussana:";
-                    kysymysLabel.style.display = 'block';
-                    // Näytä normaali viesti-elementti
-                    viestiElementti.style.display = 'block';
-                    
-                    // Palauta tallennettu viesti
-                    if (keepMessage && savedViesti) {
-                        viestiElementti.textContent = savedViesti;
-                        viestiElementti.className = savedViestiClass;
-                    }
-                }
-                
-                // Lisää fade-in efekti
-                container.classList.remove('fade-out');
-                container.classList.add('fade-in');
-                
-                // Poista fade-in luokka animaation jälkeen
-                setTimeout(() => {
-                    container.classList.remove('fade-in');
-                }, 400);
-            }, 200);
+                // Näytä kuvan PÄÄLLÄ oleva viesti-elementti
+                kuvaViestiElementti.style.display = 'block';
+            } else if (challengeText) {
+                kysymysLabel.textContent = challengeText; 
+                kysymysLabel.style.display = 'block';
+                // Näytä normaali viesti-elementti
+                viestiElementti.style.display = 'block';
+            } else {
+                kysymysLabel.textContent = puzzleSetup.initialPrompt || "Kirjoita tunnussana:";
+                kysymysLabel.style.display = 'block';
+                // Näytä normaali viesti-elementti
+                viestiElementti.style.display = 'block';
+            }
         }
 
         function initializePuzzle() {
@@ -846,23 +736,11 @@
                     kuvaViestiElementti.textContent = responseMsg;
                     kuvaViestiElementti.className = 'info';
                     kuvaViestiElementti.style.display = 'block';
-                    
-                    // Lisää glow-efekti input-kentälle
-                    inputField.classList.add('glow-success');
-                    setTimeout(() => {
-                        inputField.classList.remove('glow-success');
-                    }, 800);
                 } else {
                     // Ei kuvaa - näytä viesti normaalisti
                     viestiElementti.textContent = responseMsg;
                     viestiElementti.className = 'info';
                     viestiElementti.style.display = 'block';
-                    
-                    // Lisää glow-efekti input-kentälle
-                    inputField.classList.add('glow-success');
-                    setTimeout(() => {
-                        inputField.classList.remove('glow-success');
-                    }, 800);
                 }
 
                 currentStep.wrongAttemptsMade = 0; 
@@ -919,24 +797,12 @@
                     const attemptsLeft = maxAttempts - currentStep.wrongAttemptsMade;
                     kuvaViestiElementti.textContent = `${errorMsg} (${currentStep.wrongAttemptsMade}/${maxAttempts})`;
                     kuvaViestiElementti.className = 'error';
-                    
-                    // Lisää shake-animaatio input-kentälle
-                    inputField.classList.add('shake');
-                    setTimeout(() => {
-                        inputField.classList.remove('shake');
-                    }, 500);
                 } else {
                     // Ei kuvaa - näytä viesti normaalisti
                     const maxAttempts = currentStep.maxWrongAttempts || 3;
                     const attemptsLeft = maxAttempts - currentStep.wrongAttemptsMade;
                     viestiElementti.textContent = `${errorMsg} (${currentStep.wrongAttemptsMade}/${maxAttempts})`;
                     viestiElementti.className = 'error';
-                    
-                    // Lisää shake-animaatio input-kentälle
-                    inputField.classList.add('shake');
-                    setTimeout(() => {
-                        inputField.classList.remove('shake');
-                    }, 500);
                 }
 
                 currentStep.wrongAttemptsMade = (currentStep.wrongAttemptsMade || 0) + 1;
