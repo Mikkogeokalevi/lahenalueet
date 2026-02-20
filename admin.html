@@ -326,20 +326,11 @@
         </div>
 
         <div class="config-section">
-            <h2>🧾 Sessiohistoria</h2>
+            <h2>🧾 Sessiohallinta</h2>
+            <div class="status info">Sessioiden katselu ja poistaminen on siirretty omalle sivulle.</div>
             <div class="controls" style="margin-bottom: 10px;">
-                <button onclick="loadSessions()">🔄 Päivitä sessiot</button>
+                <button onclick="openSessionsPage()" style="background: rgba(255, 255, 255, 0.08); box-shadow: none;">Avaa sessiohallinta</button>
             </div>
-            <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
-                <label for="sessionsFilter">Suodatus nimimerkillä:</label>
-                <input type="text" id="sessionsFilter" placeholder="Kirjoita nimimerkki...">
-            </div>
-            <div class="controls" style="margin-bottom: 10px;">
-                <button onclick="toggleLatestOnly()" id="latestOnlyButton" style="background: rgba(255, 255, 255, 0.08); box-shadow: none;">📌 Näytä vain viimeisin per nimimerkki: EI</button>
-                <button onclick="toggleSessionsAutoMode()" id="sessionsAutoButton" style="background: rgba(255, 255, 255, 0.08); box-shadow: none;">🟢 Autopäivitys: Realtime</button>
-            </div>
-            <div id="sessionsStatus" class="status info">Ladataan...</div>
-            <div id="sessionsContainer"></div>
         </div>
 
         <div id="loadingIndicator" class="loading" style="display: none;">
@@ -399,18 +390,10 @@
                     document.getElementById('adminContent').style.display = 'block';
                     document.getElementById('loginScreen').style.display = 'none';
                     loadData(); // Lataa data kun kirjautuminen onnistui
-                    updateLatestOnlyButton();
-                    updateSessionsAutoButton();
-                    if (sessionsAutoMode === 'realtime') {
-                        startSessionsRealtime();
-                    } else if (sessionsAutoMode === 'poll') {
-                        startSessionsPolling();
-                    }
                 } else {
                     // Ei kirjautunut tai ei sallittu käyttäjä
                     document.getElementById('adminContent').style.display = 'none';
                     document.getElementById('loginScreen').style.display = 'block';
-                    stopSessionsAuto();
                     if (user) {
                         // Kirjautunut mutta ei sallittu käyttäjä -> uloskirjauta
                         auth.signOut();
@@ -438,7 +421,6 @@
                 // Uloskirjautuminen onnistui
                 document.getElementById('adminContent').style.display = 'none';
                 document.getElementById('loginScreen').style.display = 'block';
-                stopSessionsAuto();
             }).catch(error => {
                 console.error('Uloskirjautumisvirhe:', error);
             });
@@ -575,13 +557,6 @@
         let gameConfig = null;
         let steps = [];
         let currentEditingStep = null;
-        let sessions = [];
-        let sessionsLatestOnly = false;
-        let sessionsAutoMode = 'realtime'; // realtime | poll | off
-        let sessionsUnsubscribe = null;
-        let sessionsPollIntervalId = null;
-        let sessionsPageSize = 10;
-        let sessionsPage = 0;
 
         // Näytä/piilota latausindikaattori
         function setLoading(isLoading) {
@@ -624,8 +599,6 @@
                 // Järjestä vaiheet
                 steps.sort((a, b) => a.stepNumber - b.stepNumber);
                 renderSteps();
-
-                await loadSessions();
                 
                 showStatus('Data ladattu onnistuneesti!', 'success');
             } catch (error) {
@@ -635,262 +608,6 @@
                 setLoading(false);
             }
         }
-
-        function formatTimestamp(ts) {
-            if (!ts) return '';
-            const d = ts.toDate ? ts.toDate() : (ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts));
-            if (Number.isNaN(d.getTime())) return '';
-            return d.toLocaleString('fi-FI');
-        }
-
-        function toMillis(ts) {
-            if (!ts) return 0;
-            if (typeof ts.toMillis === 'function') return ts.toMillis();
-            if (ts.seconds) return ts.seconds * 1000;
-            const d = new Date(ts);
-            return Number.isNaN(d.getTime()) ? 0 : d.getTime();
-        }
-
-        function getSessionsFilterValue() {
-            const el = document.getElementById('sessionsFilter');
-            return (el && el.value ? el.value.trim().toLowerCase() : '');
-        }
-
-        function getVisibleSessions() {
-            const filter = getSessionsFilterValue();
-            let list = Array.isArray(sessions) ? [...sessions] : [];
-
-            if (filter) {
-                list = list.filter(s => ((s.nickname || '').toLowerCase().includes(filter)));
-            }
-
-            if (sessionsLatestOnly) {
-                const map = new Map();
-                for (const s of list) {
-                    const key = (s.nickname || '').toLowerCase();
-                    if (!key) continue;
-                    const current = map.get(key);
-                    const sTime = Math.max(toMillis(s.createdAt), toMillis(s.lastActiveAt));
-                    const cTime = current ? Math.max(toMillis(current.createdAt), toMillis(current.lastActiveAt)) : -1;
-                    if (!current || sTime > cTime) {
-                        map.set(key, s);
-                    }
-                }
-                list = Array.from(map.values());
-                list.sort((a, b) => Math.max(toMillis(b.createdAt), toMillis(b.lastActiveAt)) - Math.max(toMillis(a.createdAt), toMillis(a.lastActiveAt)));
-            }
-
-            return list;
-        }
-
-        function clampSessionsPage(totalItems) {
-            const maxPage = Math.max(0, Math.ceil(totalItems / sessionsPageSize) - 1);
-            if (sessionsPage > maxPage) sessionsPage = maxPage;
-            if (sessionsPage < 0) sessionsPage = 0;
-        }
-
-        function setSessionsPage(nextPage) {
-            sessionsPage = Number.isFinite(nextPage) ? nextPage : 0;
-            renderSessions();
-        }
-
-        function prevSessionsPage() {
-            setSessionsPage(sessionsPage - 1);
-        }
-
-        function nextSessionsPage() {
-            setSessionsPage(sessionsPage + 1);
-        }
-
-        function updateLatestOnlyButton() {
-            const btn = document.getElementById('latestOnlyButton');
-            if (!btn) return;
-            btn.textContent = `📌 Näytä vain viimeisin per nimimerkki: ${sessionsLatestOnly ? 'KYLLÄ' : 'EI'}`;
-        }
-
-        function updateSessionsAutoButton() {
-            const btn = document.getElementById('sessionsAutoButton');
-            if (!btn) return;
-            if (sessionsAutoMode === 'realtime') {
-                btn.textContent = '🟢 Autopäivitys: Realtime';
-            } else if (sessionsAutoMode === 'poll') {
-                btn.textContent = '🟡 Autopäivitys: Poll (10s)';
-            } else {
-                btn.textContent = '⚫ Autopäivitys: OFF';
-            }
-        }
-
-        function toggleLatestOnly() {
-            sessionsLatestOnly = !sessionsLatestOnly;
-            updateLatestOnlyButton();
-            sessionsPage = 0;
-            renderSessions();
-        }
-
-        function stopSessionsAuto() {
-            if (typeof sessionsUnsubscribe === 'function') {
-                try { sessionsUnsubscribe(); } catch (e) { }
-            }
-            sessionsUnsubscribe = null;
-            if (sessionsPollIntervalId) {
-                clearInterval(sessionsPollIntervalId);
-                sessionsPollIntervalId = null;
-            }
-        }
-
-        function startSessionsRealtime() {
-            stopSessionsAuto();
-            try {
-                const statusEl = document.getElementById('sessionsStatus');
-                if (statusEl) {
-                    statusEl.textContent = 'Realtime-seuranta käynnissä...';
-                    statusEl.className = 'status info';
-                }
-                const q = db.collection('gameSessions').orderBy('createdAt', 'desc').limit(200);
-                sessionsUnsubscribe = q.onSnapshot((snap) => {
-                    sessions = [];
-                    snap.forEach(doc => {
-                        sessions.push({ id: doc.id, ...doc.data() });
-                    });
-                    renderSessions();
-                    if (statusEl) {
-                        statusEl.textContent = `Realtime: ${sessions.length} sessiota`;
-                        statusEl.className = 'status success';
-                    }
-                }, (error) => {
-                    console.error('Realtime sessioiden lataaminen epäonnistui:', error);
-                    sessionsAutoMode = 'poll';
-                    updateSessionsAutoButton();
-                    startSessionsPolling();
-                });
-            } catch (e) {
-                sessionsAutoMode = 'poll';
-                updateSessionsAutoButton();
-                startSessionsPolling();
-            }
-        }
-
-        function startSessionsPolling() {
-            stopSessionsAuto();
-            loadSessions();
-            sessionsPollIntervalId = setInterval(() => {
-                loadSessions();
-            }, 10000);
-        }
-
-        function toggleSessionsAutoMode() {
-            if (sessionsAutoMode === 'realtime') {
-                sessionsAutoMode = 'poll';
-                startSessionsPolling();
-            } else if (sessionsAutoMode === 'poll') {
-                sessionsAutoMode = 'off';
-                stopSessionsAuto();
-            } else {
-                sessionsAutoMode = 'realtime';
-                startSessionsRealtime();
-            }
-            updateSessionsAutoButton();
-        }
-
-        async function loadSessions() {
-            try {
-                const statusEl = document.getElementById('sessionsStatus');
-                statusEl.textContent = 'Ladataan...';
-                statusEl.className = 'status info';
-
-                const snap = await db.collection('gameSessions').orderBy('createdAt', 'desc').limit(200).get();
-                sessions = [];
-                snap.forEach(doc => {
-                    sessions.push({ id: doc.id, ...doc.data() });
-                });
-                renderSessions();
-                statusEl.textContent = `Ladattu ${sessions.length} sessiota`;
-                statusEl.className = 'status success';
-            } catch (error) {
-                console.error('Virhe sessioiden lataamisessa:', error);
-                const statusEl = document.getElementById('sessionsStatus');
-                statusEl.textContent = 'Virhe sessioiden lataamisessa: ' + error.message;
-                statusEl.className = 'status error';
-            }
-        }
-
-        function renderSessions() {
-            const container = document.getElementById('sessionsContainer');
-            const visible = getVisibleSessions();
-            if (!visible || visible.length === 0) {
-                container.innerHTML = '<div class="muted">Ei sessioita.</div>';
-                return;
-            }
-
-            clampSessionsPage(visible.length);
-            const start = sessionsPage * sessionsPageSize;
-            const end = Math.min(visible.length, start + sessionsPageSize);
-            const pageItems = visible.slice(start, end);
-            const totalPages = Math.max(1, Math.ceil(visible.length / sessionsPageSize));
-            const pageNumber = sessionsPage + 1;
-
-            const rows = pageItems.map(s => {
-                const createdAt = formatTimestamp(s.createdAt);
-                const lastActiveAt = formatTimestamp(s.lastActiveAt);
-                const completedAt = formatTimestamp(s.completedAt);
-                const stepsTotal = Number.isFinite(s.stepsTotal) ? s.stepsTotal : '';
-                const stepIdx = Number.isFinite(s.currentStepIndex) ? (s.currentStepIndex + 1) : '';
-                const progress = (stepIdx && stepsTotal) ? `${stepIdx}/${stepsTotal}` : '';
-                const derivedCompleted = !!s.completed || (
-                    Number.isFinite(s.currentStepIndex) && Number.isFinite(s.stepsTotal) && s.stepsTotal > 0 && s.currentStepIndex >= (s.stepsTotal - 1)
-                );
-                return `
-                    <tr>
-                        <td>${(s.nickname || '').replace(/</g, '&lt;')}</td>
-                        <td class="muted">${createdAt}</td>
-                        <td class="muted">${lastActiveAt}</td>
-                        <td>${progress}</td>
-                        <td>${derivedCompleted ? '✅' : ''}</td>
-                        <td class="muted">${completedAt}</td>
-                    </tr>
-                `;
-            }).join('');
-
-            container.innerHTML = `
-                <div class="controls" style="margin: 10px 0; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                    <div class="muted">Näytetään ${start + 1}-${end} / ${visible.length}</div>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <button onclick="prevSessionsPage()" style="background: rgba(255, 255, 255, 0.08); box-shadow: none;" ${sessionsPage <= 0 ? 'disabled' : ''}>⬅️ Edellinen</button>
-                        <div class="muted">Sivu ${pageNumber} / ${totalPages}</div>
-                        <button onclick="nextSessionsPage()" style="background: rgba(255, 255, 255, 0.08); box-shadow: none;" ${sessionsPage >= (totalPages - 1) ? 'disabled' : ''}>Seuraava ➡️</button>
-                    </div>
-                </div>
-                <div style="max-height: 520px; overflow: auto; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nimimerkki</th>
-                                <th>Aloitettu</th>
-                                <th>Viimeksi aktiivinen</th>
-                                <th>Vaihe</th>
-                                <th>Valmis</th>
-                                <th>Valmis aika</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rows}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const filter = document.getElementById('sessionsFilter');
-            if (filter) {
-                filter.addEventListener('input', () => {
-                    sessionsPage = 0;
-                    renderSessions();
-                });
-            }
-            updateLatestOnlyButton();
-            updateSessionsAutoButton();
-        });
 
         // Renderöi konfiguraatiolomake
         function renderConfigForm() {
