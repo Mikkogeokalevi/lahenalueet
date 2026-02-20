@@ -562,6 +562,33 @@
             return viesti.replace(/\{nimi\}/g, getNimi());
         }
 
+        function isDisplayOnlyStep(step) {
+            if (!step) return false;
+            if (typeof step.expectedInput === 'function') return false;
+            return !step.expectedInput || String(step.expectedInput).trim() === '';
+        }
+
+        function setAnswerControlsVisible(visible) {
+            const br = inputField ? inputField.previousElementSibling : null;
+            if (inputField) inputField.style.display = visible ? 'block' : 'none';
+            if (submitButton) submitButton.style.display = visible ? 'block' : 'none';
+            if (br && br.tagName === 'BR') br.style.display = visible ? 'block' : 'none';
+            if (!visible) {
+                inputField.disabled = true;
+                submitButton.disabled = true;
+            }
+        }
+
+        function getStepDisplayText(step) {
+            if (!step) return puzzleSetup.initialPrompt;
+            const img = step.challengeImage;
+            const hasImage = img && img !== 'null' && String(img).trim() !== '';
+            if (hasImage) {
+                return step.challengeText || null;
+            }
+            return step.challengeText || puzzleSetup.initialPrompt;
+        }
+
         function generateSessionId() {
             try {
                 if (window.crypto && typeof window.crypto.randomUUID === 'function') {
@@ -882,10 +909,12 @@
             nimiField.value = '';
             nimiField.style.display = 'block';
 
+            setAnswerControlsVisible(true);
+
             const initialStepData = puzzleSetup.steps[currentStepIndex];
             const challengeImage = initialStepData.challengeImage === "null" ? null : initialStepData.challengeImage;
             const challengeText = initialStepData.challengeText === "null" ? null : initialStepData.challengeText;
-            updateChallengeDisplay(challengeImage, challengeText || puzzleSetup.initialPrompt);
+            updateChallengeDisplay(challengeImage, getStepDisplayText(initialStepData));
             
             viestiElementti.textContent = "";
             viestiElementti.className = '';
@@ -987,7 +1016,16 @@
                     const nextStepData = puzzleSetup.steps[currentStepIndex];
                     
                     // Päivitä näyttö ensin
-                    updateChallengeDisplay(nextStepData.challengeImage, nextStepData.challengeText || puzzleSetup.initialPrompt);
+                    updateChallengeDisplay(nextStepData.challengeImage, getStepDisplayText(nextStepData));
+
+                    // Jos seuraava vaihe on "vain kuva" (viimeinen kartta), piilota syöttö + nappi
+                    if (isDisplayOnlyStep(nextStepData)) {
+                        setAnswerControlsVisible(false);
+                    } else {
+                        setAnswerControlsVisible(true);
+                        inputField.disabled = false;
+                        submitButton.disabled = false;
+                    }
                     
                     // Sitten aseta viesti
                     if (currentStep.challengeImage) {
@@ -1037,11 +1075,15 @@
                     // Liikaa virheitä - palauta alkuun
                     currentStepIndex = 0;
                     const firstStepData = puzzleSetup.steps[currentStepIndex];
-                    updateChallengeDisplay(firstStepData.challengeImage, firstStepData.challengeText || puzzleSetup.initialPrompt);
+                    updateChallengeDisplay(firstStepData.challengeImage, getStepDisplayText(firstStepData));
                     inputField.value = "";
                     inputField.focus();
                     updateProgress();
 
+                    setAnswerControlsVisible(true);
+                    inputField.disabled = false;
+                    submitButton.disabled = false;
+                    
                     // Kun palataan alkuun, kysytään nimi uudelleen
                     kayttonimi = '';
                     nimiField.value = '';
