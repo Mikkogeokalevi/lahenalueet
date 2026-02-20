@@ -149,6 +149,7 @@
         <div class="controls">
             <button onclick="goBack()" class="secondary">⬅️ Takaisin adminiin</button>
             <button onclick="loadSessions()">🔄 Päivitä</button>
+            <button onclick="toggleAutoMode()" id="autoModeBtn" class="secondary">🟢 Autopäivitys: Realtime</button>
             <button onclick="deleteSelected()" id="deleteSelectedBtn" class="danger" disabled>🗑️ Poista valitut</button>
             <button onclick="logout()" class="secondary">🚪 Kirjaudu ulos</button>
         </div>
@@ -208,6 +209,10 @@
         let page = 0;
         const selectedIds = new Set();
 
+        let autoMode = 'realtime'; // realtime | poll | off
+        let sessionsUnsubscribe = null;
+        let pollIntervalId = null;
+
         function initializeFirebase() {
             const firebaseConfig = {
                 apiKey: "AIzaSyCaLtaT4J4qFBxEE0bxK8_1yyQDbcwwWfs",
@@ -230,10 +235,12 @@
                 if (user && ALLOWED_EMAILS.includes(user.email)) {
                     document.getElementById('adminContent').style.display = 'block';
                     document.getElementById('loginScreen').style.display = 'none';
-                    loadSessions();
+                    updateAutoModeButton();
+                    startAutoUpdates();
                 } else {
                     document.getElementById('adminContent').style.display = 'none';
                     document.getElementById('loginScreen').style.display = 'block';
+                    stopAutoUpdates();
                     if (user) {
                         auth.signOut();
                         alert('Käyttäjä ei ole sallittu!');
@@ -257,11 +264,102 @@
         }
 
         function logout() {
+            stopAutoUpdates();
             auth.signOut();
         }
 
         function goBack() {
+            stopAutoUpdates();
             window.location.href = 'admin.html';
+        }
+
+        function updateAutoModeButton() {
+            const btn = document.getElementById('autoModeBtn');
+            if (!btn) return;
+            if (autoMode === 'realtime') {
+                btn.textContent = '🟢 Autopäivitys: Realtime';
+            } else if (autoMode === 'poll') {
+                btn.textContent = '🟡 Autopäivitys: Poll (10s)';
+            } else {
+                btn.textContent = '⚫ Autopäivitys: OFF';
+            }
+        }
+
+        function stopAutoUpdates() {
+            if (typeof sessionsUnsubscribe === 'function') {
+                try { sessionsUnsubscribe(); } catch (e) { }
+            }
+            sessionsUnsubscribe = null;
+            if (pollIntervalId) {
+                clearInterval(pollIntervalId);
+                pollIntervalId = null;
+            }
+        }
+
+        function startRealtime() {
+            stopAutoUpdates();
+            const statusEl = document.getElementById('status');
+            if (statusEl) {
+                statusEl.textContent = 'Realtime-seuranta käynnissä...';
+                statusEl.className = 'status info';
+            }
+
+            try {
+                const q = db.collection('gameSessions').orderBy('createdAt', 'desc').limit(500);
+                sessionsUnsubscribe = q.onSnapshot((snap) => {
+                    sessions = [];
+                    snap.forEach(doc => {
+                        sessions.push({ id: doc.id, ...doc.data() });
+                    });
+                    page = 0;
+                    selectedIds.clear();
+                    updateDeleteButton();
+                    render();
+                    if (statusEl) {
+                        statusEl.textContent = `Realtime: ${sessions.length} sessiota`;
+                        statusEl.className = 'status success';
+                    }
+                }, (error) => {
+                    console.error('Realtime sessioiden lataaminen epäonnistui:', error);
+                    autoMode = 'poll';
+                    updateAutoModeButton();
+                    startPolling();
+                });
+            } catch (e) {
+                autoMode = 'poll';
+                updateAutoModeButton();
+                startPolling();
+            }
+        }
+
+        function startPolling() {
+            stopAutoUpdates();
+            loadSessions();
+            pollIntervalId = setInterval(() => {
+                loadSessions();
+            }, 10000);
+        }
+
+        function startAutoUpdates() {
+            if (autoMode === 'realtime') {
+                startRealtime();
+            } else if (autoMode === 'poll') {
+                startPolling();
+            } else {
+                stopAutoUpdates();
+            }
+        }
+
+        function toggleAutoMode() {
+            if (autoMode === 'realtime') {
+                autoMode = 'poll';
+            } else if (autoMode === 'poll') {
+                autoMode = 'off';
+            } else {
+                autoMode = 'realtime';
+            }
+            updateAutoModeButton();
+            startAutoUpdates();
         }
 
         function formatTimestamp(ts) {
@@ -497,6 +595,10 @@
 
                 updateDeleteButton();
                 render();
+            });
+
+            window.addEventListener('beforeunload', () => {
+                stopAutoUpdates();
             });
         });
     </script>
