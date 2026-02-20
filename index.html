@@ -805,7 +805,8 @@
             if (imageCount <= 1) return puzzleSetup.codeString;
             
             const partSize = getCodePartSize();
-            const currentImageIndex = imageSteps.findIndex(step => step.stepNumber === stepIndex);
+            const targetStepNumber = Number(stepIndex);
+            const currentImageIndex = imageSteps.findIndex(step => Number(step.stepNumber) === targetStepNumber);
             
             if (currentImageIndex === -1) return '';
             
@@ -989,7 +990,8 @@
                         
                         // Tarkista onko tämä viimeinen kuva
                         const imageSteps = puzzleSetup.steps.filter(step => hasChallengeImage(step) && step.stepNumber > 0);
-                        const currentImageIndex = imageSteps.findIndex(step => step.stepNumber === currentStep.stepNumber);
+                        const currentStepNumber = Number(currentStep.stepNumber);
+                        const currentImageIndex = imageSteps.findIndex(step => Number(step.stepNumber) === currentStepNumber);
                         
                         if (currentImageIndex === imageSteps.length - 1) {
                             // Viimeinen kuva - kysy koko koodia
