@@ -329,6 +329,14 @@
             <div class="controls" style="margin-bottom: 10px;">
                 <button onclick="loadSessions()">🔄 Päivitä sessiot</button>
             </div>
+            <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
+                <label for="sessionsFilter">Suodatus nimimerkillä:</label>
+                <input type="text" id="sessionsFilter" placeholder="Kirjoita nimimerkki...">
+            </div>
+            <div class="controls" style="margin-bottom: 10px;">
+                <button onclick="toggleLatestOnly()" id="latestOnlyButton" style="background: rgba(255, 255, 255, 0.08); box-shadow: none;">📌 Näytä vain viimeisin per nimimerkki: EI</button>
+                <button onclick="toggleSessionsAutoMode()" id="sessionsAutoButton" style="background: rgba(255, 255, 255, 0.08); box-shadow: none;">🟢 Autopäivitys: Realtime</button>
+            </div>
             <div id="sessionsStatus" class="status info">Ladataan...</div>
             <div id="sessionsContainer"></div>
         </div>
@@ -390,10 +398,18 @@
                     document.getElementById('adminContent').style.display = 'block';
                     document.getElementById('loginScreen').style.display = 'none';
                     loadData(); // Lataa data kun kirjautuminen onnistui
+                    updateLatestOnlyButton();
+                    updateSessionsAutoButton();
+                    if (sessionsAutoMode === 'realtime') {
+                        startSessionsRealtime();
+                    } else if (sessionsAutoMode === 'poll') {
+                        startSessionsPolling();
+                    }
                 } else {
                     // Ei kirjautunut tai ei sallittu käyttäjä
                     document.getElementById('adminContent').style.display = 'none';
                     document.getElementById('loginScreen').style.display = 'block';
+                    stopSessionsAuto();
                     if (user) {
                         // Kirjautunut mutta ei sallittu käyttäjä -> uloskirjauta
                         auth.signOut();
@@ -421,6 +437,7 @@
                 // Uloskirjautuminen onnistui
                 document.getElementById('adminContent').style.display = 'none';
                 document.getElementById('loginScreen').style.display = 'block';
+                stopSessionsAuto();
             }).catch(error => {
                 console.error('Uloskirjautumisvirhe:', error);
             });
@@ -554,6 +571,10 @@
         let steps = [];
         let currentEditingStep = null;
         let sessions = [];
+        let sessionsLatestOnly = false;
+        let sessionsAutoMode = 'realtime'; // realtime | poll | off
+        let sessionsUnsubscribe = null;
+        let sessionsPollIntervalId = null;
 
         // Näytä/piilota latausindikaattori
         function setLoading(isLoading) {
@@ -615,6 +636,135 @@
             return d.toLocaleString('fi-FI');
         }
 
+        function toMillis(ts) {
+            if (!ts) return 0;
+            if (typeof ts.toMillis === 'function') return ts.toMillis();
+            if (ts.seconds) return ts.seconds * 1000;
+            const d = new Date(ts);
+            return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+        }
+
+        function getSessionsFilterValue() {
+            const el = document.getElementById('sessionsFilter');
+            return (el && el.value ? el.value.trim().toLowerCase() : '');
+        }
+
+        function getVisibleSessions() {
+            const filter = getSessionsFilterValue();
+            let list = Array.isArray(sessions) ? [...sessions] : [];
+
+            if (filter) {
+                list = list.filter(s => ((s.nickname || '').toLowerCase().includes(filter)));
+            }
+
+            if (sessionsLatestOnly) {
+                const map = new Map();
+                for (const s of list) {
+                    const key = (s.nickname || '').toLowerCase();
+                    if (!key) continue;
+                    const current = map.get(key);
+                    const sTime = Math.max(toMillis(s.createdAt), toMillis(s.lastActiveAt));
+                    const cTime = current ? Math.max(toMillis(current.createdAt), toMillis(current.lastActiveAt)) : -1;
+                    if (!current || sTime > cTime) {
+                        map.set(key, s);
+                    }
+                }
+                list = Array.from(map.values());
+                list.sort((a, b) => Math.max(toMillis(b.createdAt), toMillis(b.lastActiveAt)) - Math.max(toMillis(a.createdAt), toMillis(a.lastActiveAt)));
+            }
+
+            return list;
+        }
+
+        function updateLatestOnlyButton() {
+            const btn = document.getElementById('latestOnlyButton');
+            if (!btn) return;
+            btn.textContent = `📌 Näytä vain viimeisin per nimimerkki: ${sessionsLatestOnly ? 'KYLLÄ' : 'EI'}`;
+        }
+
+        function updateSessionsAutoButton() {
+            const btn = document.getElementById('sessionsAutoButton');
+            if (!btn) return;
+            if (sessionsAutoMode === 'realtime') {
+                btn.textContent = '🟢 Autopäivitys: Realtime';
+            } else if (sessionsAutoMode === 'poll') {
+                btn.textContent = '🟡 Autopäivitys: Poll (10s)';
+            } else {
+                btn.textContent = '⚫ Autopäivitys: OFF';
+            }
+        }
+
+        function toggleLatestOnly() {
+            sessionsLatestOnly = !sessionsLatestOnly;
+            updateLatestOnlyButton();
+            renderSessions();
+        }
+
+        function stopSessionsAuto() {
+            if (typeof sessionsUnsubscribe === 'function') {
+                try { sessionsUnsubscribe(); } catch (e) { }
+            }
+            sessionsUnsubscribe = null;
+            if (sessionsPollIntervalId) {
+                clearInterval(sessionsPollIntervalId);
+                sessionsPollIntervalId = null;
+            }
+        }
+
+        function startSessionsRealtime() {
+            stopSessionsAuto();
+            try {
+                const statusEl = document.getElementById('sessionsStatus');
+                if (statusEl) {
+                    statusEl.textContent = 'Realtime-seuranta käynnissä...';
+                    statusEl.className = 'status info';
+                }
+                const q = db.collection('gameSessions').orderBy('createdAt', 'desc').limit(200);
+                sessionsUnsubscribe = q.onSnapshot((snap) => {
+                    sessions = [];
+                    snap.forEach(doc => {
+                        sessions.push({ id: doc.id, ...doc.data() });
+                    });
+                    renderSessions();
+                    if (statusEl) {
+                        statusEl.textContent = `Realtime: ${sessions.length} sessiota`;
+                        statusEl.className = 'status success';
+                    }
+                }, (error) => {
+                    console.error('Realtime sessioiden lataaminen epäonnistui:', error);
+                    sessionsAutoMode = 'poll';
+                    updateSessionsAutoButton();
+                    startSessionsPolling();
+                });
+            } catch (e) {
+                sessionsAutoMode = 'poll';
+                updateSessionsAutoButton();
+                startSessionsPolling();
+            }
+        }
+
+        function startSessionsPolling() {
+            stopSessionsAuto();
+            loadSessions();
+            sessionsPollIntervalId = setInterval(() => {
+                loadSessions();
+            }, 10000);
+        }
+
+        function toggleSessionsAutoMode() {
+            if (sessionsAutoMode === 'realtime') {
+                sessionsAutoMode = 'poll';
+                startSessionsPolling();
+            } else if (sessionsAutoMode === 'poll') {
+                sessionsAutoMode = 'off';
+                stopSessionsAuto();
+            } else {
+                sessionsAutoMode = 'realtime';
+                startSessionsRealtime();
+            }
+            updateSessionsAutoButton();
+        }
+
         async function loadSessions() {
             try {
                 const statusEl = document.getElementById('sessionsStatus');
@@ -639,12 +789,13 @@
 
         function renderSessions() {
             const container = document.getElementById('sessionsContainer');
-            if (!sessions || sessions.length === 0) {
+            const visible = getVisibleSessions();
+            if (!visible || visible.length === 0) {
                 container.innerHTML = '<div class="muted">Ei sessioita.</div>';
                 return;
             }
 
-            const rows = sessions.map(s => {
+            const rows = visible.map(s => {
                 const createdAt = formatTimestamp(s.createdAt);
                 const lastActiveAt = formatTimestamp(s.lastActiveAt);
                 const completedAt = formatTimestamp(s.completedAt);
@@ -681,6 +832,17 @@
                 </table>
             `;
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const filter = document.getElementById('sessionsFilter');
+            if (filter) {
+                filter.addEventListener('input', () => {
+                    renderSessions();
+                });
+            }
+            updateLatestOnlyButton();
+            updateSessionsAutoButton();
+        });
 
         // Renderöi konfiguraatiolomake
         function renderConfigForm() {
