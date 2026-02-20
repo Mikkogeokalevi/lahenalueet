@@ -541,6 +541,7 @@
         let isLoading = true;
         let collectedCodeParts = []; // Kerätyt koodinpätkät
         let kayttonimi = ''; // Nykyisen pelin nimi
+        let currentSessionId = null;
 
         // Aseta nimi
         function setNimi(nimi) {
@@ -559,6 +560,86 @@
         // Korvaa {nimi} placeholder viestistä
         function korvaaNimi(viesti) {
             return viesti.replace(/\{nimi\}/g, getNimi());
+        }
+
+        function generateSessionId() {
+            try {
+                if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                    return window.crypto.randomUUID();
+                }
+            } catch (e) {
+            }
+            return `sess_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+        }
+
+        function startNewSession() {
+            currentSessionId = generateSessionId();
+            try {
+                sessionStorage.setItem('gameSessionId', currentSessionId);
+            } catch (e) {
+            }
+        }
+
+        function getOrCreateSessionId() {
+            if (currentSessionId) return currentSessionId;
+            try {
+                const stored = sessionStorage.getItem('gameSessionId');
+                if (stored) {
+                    currentSessionId = stored;
+                    return currentSessionId;
+                }
+            } catch (e) {
+            }
+            startNewSession();
+            return currentSessionId;
+        }
+
+        async function createSessionDoc() {
+            try {
+                if (!db) return;
+                const sessionId = getOrCreateSessionId();
+                const data = {
+                    nickname: kayttonimi,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastActiveAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    currentStepIndex: currentStepIndex,
+                    stepsTotal: (puzzleSetup && puzzleSetup.steps) ? puzzleSetup.steps.length : 0,
+                    completed: false,
+                    completedAt: null
+                };
+                await db.collection('gameSessions').doc(sessionId).set(data, { merge: true });
+            } catch (e) {
+            }
+        }
+
+        async function updateSessionProgress() {
+            try {
+                if (!db || !kayttonimi) return;
+                const sessionId = getOrCreateSessionId();
+                const data = {
+                    lastActiveAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    currentStepIndex: currentStepIndex,
+                    stepsTotal: (puzzleSetup && puzzleSetup.steps) ? puzzleSetup.steps.length : 0
+                };
+                await db.collection('gameSessions').doc(sessionId).set(data, { merge: true });
+            } catch (e) {
+            }
+        }
+
+        async function markSessionCompleted() {
+            try {
+                if (!db || !kayttonimi) return;
+                const sessionId = getOrCreateSessionId();
+                const data = {
+                    lastActiveAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    completed: true,
+                    completedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    currentStepIndex: currentStepIndex,
+                    stepsTotal: (puzzleSetup && puzzleSetup.steps) ? puzzleSetup.steps.length : 0
+                };
+                await db.collection('gameSessions').doc(sessionId).set(data, { merge: true });
+            } catch (e) {
+            }
         }
 
         // Modal-funktiot
@@ -719,6 +800,7 @@
                 viestiElementti.className = 'success';
                 inputField.disabled = true;
                 submitButton.disabled = true;
+                markSessionCompleted();
                 
                 // Piilota edistymispalkki lopussa
                 setTimeout(() => {
@@ -792,6 +874,11 @@
 
             currentStepIndex = 0;
             kayttonimi = '';
+            currentSessionId = null;
+            try {
+                sessionStorage.removeItem('gameSessionId');
+            } catch (e) {
+            }
             nimiField.value = '';
             nimiField.style.display = 'block';
 
@@ -822,6 +909,8 @@
                 } else {
                     // Nimi asetettu - piilota kenttä pelin ajaksi
                     nimiField.style.display = 'none';
+                    startNewSession();
+                    createSessionDoc();
                 }
             }
 
@@ -885,6 +974,7 @@
                     viestiElementti.className = 'success';
                     inputField.disabled = true;
                     submitButton.disabled = true;
+                    markSessionCompleted();
                     
                     // Piilota edistymispalkki lopussa
                     setTimeout(() => {
@@ -915,6 +1005,7 @@
                     inputField.value = "";
                     inputField.focus();
                     updateProgress();
+                    updateSessionProgress();
                 }
             } else {
                 // Väärä vastaus
@@ -955,7 +1046,8 @@
                     kayttonimi = '';
                     nimiField.value = '';
                     nimiField.style.display = 'block';
-                    
+                    startNewSession();
+
                     // Näytä virheviesti
                     if (currentStep.challengeImage) {
                         kuvaViestiElementti.textContent = "Liikaa virheitä! Palataan alkuun.";

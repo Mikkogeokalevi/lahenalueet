@@ -151,6 +151,33 @@
             min-height: 60px;
             resize: vertical;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: rgba(30, 30, 30, 0.9);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.95em;
+        }
+        th {
+            background: rgba(255, 136, 0, 0.12);
+            color: #ff8800;
+            font-weight: 700;
+        }
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .muted {
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 0.9em;
+        }
         .modal {
             display: none;
             position: fixed;
@@ -295,6 +322,15 @@
             <button onclick="exportData()">📤 Vie data</button>
             <button onclick="importData()">📥 Tuo data</button>
             <button onclick="logout()" class="danger">🚪 Kirjaudu ulos</button>
+        </div>
+
+        <div class="config-section">
+            <h2>🧾 Sessiohistoria</h2>
+            <div class="controls" style="margin-bottom: 10px;">
+                <button onclick="loadSessions()">🔄 Päivitä sessiot</button>
+            </div>
+            <div id="sessionsStatus" class="status info">Ladataan...</div>
+            <div id="sessionsContainer"></div>
         </div>
 
         <div id="loadingIndicator" class="loading" style="display: none;">
@@ -517,6 +553,7 @@
         let gameConfig = null;
         let steps = [];
         let currentEditingStep = null;
+        let sessions = [];
 
         // Näytä/piilota latausindikaattori
         function setLoading(isLoading) {
@@ -559,6 +596,8 @@
                 // Järjestä vaiheet
                 steps.sort((a, b) => a.stepNumber - b.stepNumber);
                 renderSteps();
+
+                await loadSessions();
                 
                 showStatus('Data ladattu onnistuneesti!', 'success');
             } catch (error) {
@@ -567,6 +606,80 @@
             } finally {
                 setLoading(false);
             }
+        }
+
+        function formatTimestamp(ts) {
+            if (!ts) return '';
+            const d = ts.toDate ? ts.toDate() : (ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts));
+            if (Number.isNaN(d.getTime())) return '';
+            return d.toLocaleString('fi-FI');
+        }
+
+        async function loadSessions() {
+            try {
+                const statusEl = document.getElementById('sessionsStatus');
+                statusEl.textContent = 'Ladataan...';
+                statusEl.className = 'status info';
+
+                const snap = await db.collection('gameSessions').orderBy('createdAt', 'desc').limit(200).get();
+                sessions = [];
+                snap.forEach(doc => {
+                    sessions.push({ id: doc.id, ...doc.data() });
+                });
+                renderSessions();
+                statusEl.textContent = `Ladattu ${sessions.length} sessiota`;
+                statusEl.className = 'status success';
+            } catch (error) {
+                console.error('Virhe sessioiden lataamisessa:', error);
+                const statusEl = document.getElementById('sessionsStatus');
+                statusEl.textContent = 'Virhe sessioiden lataamisessa: ' + error.message;
+                statusEl.className = 'status error';
+            }
+        }
+
+        function renderSessions() {
+            const container = document.getElementById('sessionsContainer');
+            if (!sessions || sessions.length === 0) {
+                container.innerHTML = '<div class="muted">Ei sessioita.</div>';
+                return;
+            }
+
+            const rows = sessions.map(s => {
+                const createdAt = formatTimestamp(s.createdAt);
+                const lastActiveAt = formatTimestamp(s.lastActiveAt);
+                const completedAt = formatTimestamp(s.completedAt);
+                const stepsTotal = Number.isFinite(s.stepsTotal) ? s.stepsTotal : '';
+                const stepIdx = Number.isFinite(s.currentStepIndex) ? (s.currentStepIndex + 1) : '';
+                const progress = (stepIdx && stepsTotal) ? `${stepIdx}/${stepsTotal}` : '';
+                return `
+                    <tr>
+                        <td>${(s.nickname || '').replace(/</g, '&lt;')}</td>
+                        <td class="muted">${createdAt}</td>
+                        <td class="muted">${lastActiveAt}</td>
+                        <td>${progress}</td>
+                        <td>${s.completed ? '✅' : ''}</td>
+                        <td class="muted">${completedAt}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nimimerkki</th>
+                            <th>Aloitettu</th>
+                            <th>Viimeksi aktiivinen</th>
+                            <th>Vaihe</th>
+                            <th>Valmis</th>
+                            <th>Valmis aika</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            `;
         }
 
         // Renderöi konfiguraatiolomake
