@@ -981,6 +981,8 @@
                 // Korvaa {nimi} placeholder
                 responseMsg = korvaaNimi(responseMsg);
 
+                let shouldAskFinalCode = false;
+
                 // Lisää koodinpätkä jos on kuva ja codeString on olemassa
                 if (hasChallengeImage(currentStep) && puzzleSetup.codeString) {
                     const codePart = getCodePart(currentStep.stepNumber);
@@ -994,11 +996,7 @@
                         const currentImageIndex = imageSteps.findIndex(step => Number(step.stepNumber) === currentStepNumber);
                         
                         if (currentImageIndex === imageSteps.length - 1) {
-                            // Viimeinen kuva - kysy koko koodia
-                            setTimeout(() => {
-                                checkFinalCode();
-                            }, 2000);
-                            return;
+                            shouldAskFinalCode = true;
                         }
                     }
                 }
@@ -1014,6 +1012,14 @@
                     viestiElementti.textContent = responseMsg;
                     viestiElementti.className = 'info';
                     viestiElementti.style.display = 'block';
+                }
+
+                if (shouldAskFinalCode) {
+                    // Viimeinen kuva - kysy koko koodia
+                    setTimeout(() => {
+                        checkFinalCode();
+                    }, 2000);
+                    return;
                 }
 
                 currentStep.wrongAttemptsMade = 0; 
