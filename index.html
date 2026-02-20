@@ -562,10 +562,24 @@
             return viesti.replace(/\{nimi\}/g, getNimi());
         }
 
+        function normalizeNullish(value) {
+            if (value === null || typeof value === 'undefined') return null;
+            const s = String(value).trim();
+            if (!s || s.toLowerCase() === 'null') return null;
+            return value;
+        }
+
+        function hasChallengeImage(step) {
+            if (!step) return false;
+            const img = normalizeNullish(step.challengeImage);
+            return !!(img && String(img).trim() !== '');
+        }
+
         function isDisplayOnlyStep(step) {
             if (!step) return false;
             if (typeof step.expectedInput === 'function') return false;
-            return !step.expectedInput || String(step.expectedInput).trim() === '';
+            const expected = normalizeNullish(step.expectedInput);
+            return !expected;
         }
 
         function setAnswerControlsVisible(visible) {
@@ -581,12 +595,11 @@
 
         function getStepDisplayText(step) {
             if (!step) return puzzleSetup.initialPrompt;
-            const img = step.challengeImage;
-            const hasImage = img && img !== 'null' && String(img).trim() !== '';
-            if (hasImage) {
-                return step.challengeText || null;
+            const text = normalizeNullish(step.challengeText);
+            if (hasChallengeImage(step)) {
+                return text || null;
             }
-            return step.challengeText || puzzleSetup.initialPrompt;
+            return text || puzzleSetup.initialPrompt;
         }
 
         function generateSessionId() {
@@ -767,7 +780,7 @@
             if (!puzzleSetup.codeString) return 0;
             
             // Laske kuinka monta kuvavaihetta on (pl. salasanavaihe)
-            const imageSteps = puzzleSetup.steps.filter(step => step.challengeImage && step.stepNumber > 0);
+            const imageSteps = puzzleSetup.steps.filter(step => hasChallengeImage(step) && step.stepNumber > 0);
             const imageCount = imageSteps.length;
             
             if (imageCount === 0) return 0;
@@ -786,7 +799,7 @@
         function getCodePart(stepIndex) {
             if (!puzzleSetup.codeString) return '';
             
-            const imageSteps = puzzleSetup.steps.filter(step => step.challengeImage && step.stepNumber > 0);
+            const imageSteps = puzzleSetup.steps.filter(step => hasChallengeImage(step) && step.stepNumber > 0);
             const imageCount = imageSteps.length;
             
             if (imageCount <= 1) return puzzleSetup.codeString;
@@ -857,18 +870,21 @@
                 kuvaViestiElementti.className = '';
             }
 
-            if (challengeImage && challengeImage !== 'null' && challengeImage.trim() !== '') {
-                promptKuva.src = challengeImage;
+            const normalizedImage = normalizeNullish(challengeImage);
+            const normalizedText = normalizeNullish(challengeText);
+
+            if (normalizedImage && String(normalizedImage).trim() !== '') {
+                promptKuva.src = normalizedImage;
                 promptKuva.onclick = openImageModal; // Lisää klikkaustoiminto
                 kuvaContainer.style.display = 'block';
-                if (challengeText) {
-                    kuvaTekstiLabel.textContent = challengeText;
+                if (normalizedText) {
+                    kuvaTekstiLabel.textContent = normalizedText;
                     kuvaTekstiLabel.style.display = 'block';
                 }
                 // Näytä kuvan PÄÄLLÄ oleva viesti-elementti
                 kuvaViestiElementti.style.display = 'block';
-            } else if (challengeText) {
-                kysymysLabel.textContent = challengeText; 
+            } else if (normalizedText) {
+                kysymysLabel.textContent = normalizedText; 
                 kysymysLabel.style.display = 'block';
                 // Näytä normaali viesti-elementti
                 viestiElementti.style.display = 'block';
@@ -950,7 +966,12 @@
                              currentStep.expectedInput() : 
                              currentStep.expectedInput;
 
-            if (syote === expected.toLowerCase()) {
+            const expectedNormalized = normalizeNullish(expected);
+            if (!expectedNormalized) {
+                return;
+            }
+
+            if (syote === String(expectedNormalized).toLowerCase()) {
                 // Oikea vastaus
                 let responseMsg = typeof currentStep.responseMessage === 'function' ?
                                     currentStep.responseMessage() :
@@ -960,14 +981,14 @@
                 responseMsg = korvaaNimi(responseMsg);
 
                 // Lisää koodinpätkä jos on kuva ja codeString on olemassa
-                if (currentStep.challengeImage && puzzleSetup.codeString) {
+                if (hasChallengeImage(currentStep) && puzzleSetup.codeString) {
                     const codePart = getCodePart(currentStep.stepNumber);
                     if (codePart) {
                         collectedCodeParts.push(codePart);
                         responseMsg = `🔑 Koodinpätkä: ${codePart} - ${responseMsg}`;
                         
                         // Tarkista onko tämä viimeinen kuva
-                        const imageSteps = puzzleSetup.steps.filter(step => step.challengeImage && step.stepNumber > 0);
+                        const imageSteps = puzzleSetup.steps.filter(step => hasChallengeImage(step) && step.stepNumber > 0);
                         const currentImageIndex = imageSteps.findIndex(step => step.stepNumber === currentStep.stepNumber);
                         
                         if (currentImageIndex === imageSteps.length - 1) {
@@ -981,7 +1002,7 @@
                 }
                 
                 // Näytä viesti oikeassa paikassa
-                if (currentStep.challengeImage) {
+                if (hasChallengeImage(currentStep)) {
                     // Kuva oli näkyvissä - näytä viesti kuvan päällä
                     kuvaViestiElementti.textContent = responseMsg;
                     kuvaViestiElementti.className = 'info';
@@ -1028,7 +1049,7 @@
                     }
                     
                     // Sitten aseta viesti
-                    if (currentStep.challengeImage) {
+                    if (hasChallengeImage(currentStep)) {
                         // Kuva oli näkyvissä - näytä viesti kuvan päällä
                         kuvaViestiElementti.textContent = responseMsg;
                         kuvaViestiElementti.className = 'info';
@@ -1055,7 +1076,7 @@
                 errorMsg = korvaaNimi(errorMsg);
 
                 // Näytä virheviesti oikeassa paikassa
-                if (currentStep.challengeImage) {
+                if (hasChallengeImage(currentStep)) {
                     // Kuva on näkyvissä - näytä viesti kuvan alla
                     const maxAttempts = currentStep.maxWrongAttempts || 3;
                     const attemptsLeft = maxAttempts - currentStep.wrongAttemptsMade;
@@ -1091,7 +1112,7 @@
                     startNewSession();
 
                     // Näytä virheviesti
-                    if (currentStep.challengeImage) {
+                    if (hasChallengeImage(currentStep)) {
                         kuvaViestiElementti.textContent = "Liikaa virheitä! Palataan alkuun.";
                         kuvaViestiElementti.className = 'error';
                         kuvaViestiElementti.style.display = 'block';
