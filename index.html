@@ -806,13 +806,20 @@
             // Näytä nimi-input jos ei ole tallennettu nimeä
             const tallennettuNimi = getNimi();
             if (!tallennettuNimi) {
+                // Näytä vain nimi-input
                 nimiField.style.display = 'block';
                 nimiField.disabled = false;
                 nimiField.focus();
                 inputField.disabled = true;
                 submitButton.disabled = true;
+                viestiElementti.textContent = "Kirjoita kätkönimesi aloittaaksesi mysteerin.";
+                viestiElementti.className = 'info';
             } else {
+                // Nimi on jo tallennettu, näytä normaali peli
                 nimiField.style.display = 'none';
+                inputField.disabled = false;
+                submitButton.disabled = false;
+                inputField.focus();
             }
         }
 
