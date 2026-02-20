@@ -575,6 +575,8 @@
         let sessionsAutoMode = 'realtime'; // realtime | poll | off
         let sessionsUnsubscribe = null;
         let sessionsPollIntervalId = null;
+        let sessionsPageSize = 10;
+        let sessionsPage = 0;
 
         // Näytä/piilota latausindikaattori
         function setLoading(isLoading) {
@@ -676,6 +678,25 @@
             return list;
         }
 
+        function clampSessionsPage(totalItems) {
+            const maxPage = Math.max(0, Math.ceil(totalItems / sessionsPageSize) - 1);
+            if (sessionsPage > maxPage) sessionsPage = maxPage;
+            if (sessionsPage < 0) sessionsPage = 0;
+        }
+
+        function setSessionsPage(nextPage) {
+            sessionsPage = Number.isFinite(nextPage) ? nextPage : 0;
+            renderSessions();
+        }
+
+        function prevSessionsPage() {
+            setSessionsPage(sessionsPage - 1);
+        }
+
+        function nextSessionsPage() {
+            setSessionsPage(sessionsPage + 1);
+        }
+
         function updateLatestOnlyButton() {
             const btn = document.getElementById('latestOnlyButton');
             if (!btn) return;
@@ -697,6 +718,7 @@
         function toggleLatestOnly() {
             sessionsLatestOnly = !sessionsLatestOnly;
             updateLatestOnlyButton();
+            sessionsPage = 0;
             renderSessions();
         }
 
@@ -795,41 +817,61 @@
                 return;
             }
 
-            const rows = visible.map(s => {
+            clampSessionsPage(visible.length);
+            const start = sessionsPage * sessionsPageSize;
+            const end = Math.min(visible.length, start + sessionsPageSize);
+            const pageItems = visible.slice(start, end);
+            const totalPages = Math.max(1, Math.ceil(visible.length / sessionsPageSize));
+            const pageNumber = sessionsPage + 1;
+
+            const rows = pageItems.map(s => {
                 const createdAt = formatTimestamp(s.createdAt);
                 const lastActiveAt = formatTimestamp(s.lastActiveAt);
                 const completedAt = formatTimestamp(s.completedAt);
                 const stepsTotal = Number.isFinite(s.stepsTotal) ? s.stepsTotal : '';
                 const stepIdx = Number.isFinite(s.currentStepIndex) ? (s.currentStepIndex + 1) : '';
                 const progress = (stepIdx && stepsTotal) ? `${stepIdx}/${stepsTotal}` : '';
+                const derivedCompleted = !!s.completed || (
+                    Number.isFinite(s.currentStepIndex) && Number.isFinite(s.stepsTotal) && s.stepsTotal > 0 && s.currentStepIndex >= (s.stepsTotal - 1)
+                );
                 return `
                     <tr>
                         <td>${(s.nickname || '').replace(/</g, '&lt;')}</td>
                         <td class="muted">${createdAt}</td>
                         <td class="muted">${lastActiveAt}</td>
                         <td>${progress}</td>
-                        <td>${s.completed ? '✅' : ''}</td>
+                        <td>${derivedCompleted ? '✅' : ''}</td>
                         <td class="muted">${completedAt}</td>
                     </tr>
                 `;
             }).join('');
 
             container.innerHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nimimerkki</th>
-                            <th>Aloitettu</th>
-                            <th>Viimeksi aktiivinen</th>
-                            <th>Vaihe</th>
-                            <th>Valmis</th>
-                            <th>Valmis aika</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rows}
-                    </tbody>
-                </table>
+                <div class="controls" style="margin: 10px 0; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <div class="muted">Näytetään ${start + 1}-${end} / ${visible.length}</div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button onclick="prevSessionsPage()" style="background: rgba(255, 255, 255, 0.08); box-shadow: none;" ${sessionsPage <= 0 ? 'disabled' : ''}>⬅️ Edellinen</button>
+                        <div class="muted">Sivu ${pageNumber} / ${totalPages}</div>
+                        <button onclick="nextSessionsPage()" style="background: rgba(255, 255, 255, 0.08); box-shadow: none;" ${sessionsPage >= (totalPages - 1) ? 'disabled' : ''}>Seuraava ➡️</button>
+                    </div>
+                </div>
+                <div style="max-height: 520px; overflow: auto; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nimimerkki</th>
+                                <th>Aloitettu</th>
+                                <th>Viimeksi aktiivinen</th>
+                                <th>Vaihe</th>
+                                <th>Valmis</th>
+                                <th>Valmis aika</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>
             `;
         }
 
@@ -837,6 +879,7 @@
             const filter = document.getElementById('sessionsFilter');
             if (filter) {
                 filter.addEventListener('input', () => {
+                    sessionsPage = 0;
                     renderSessions();
                 });
             }
