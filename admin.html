@@ -321,6 +321,7 @@
             <button onclick="saveAllChanges()" class="success">💾 Tallenna kaikki muutokset</button>
             <button onclick="exportData()">📤 Vie data</button>
             <button onclick="importData()">📥 Tuo data</button>
+            <button onclick="openSessionsPage()" style="background: rgba(255, 255, 255, 0.08); box-shadow: none;">🧾 Sessiohallinta</button>
             <button onclick="logout()" class="danger">🚪 Kirjaudu ulos</button>
         </div>
 
@@ -441,6 +442,10 @@
             }).catch(error => {
                 console.error('Uloskirjautumisvirhe:', error);
             });
+        }
+
+        function openSessionsPage() {
+            window.location.href = 'sessions.html';
         }
 
         // CodeString hallinta

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lahen Alueet - Sessiot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(20, 20, 20, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 18px;
+            font-size: 2.2em;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        button {
+            background: linear-gradient(135deg, #ff8800, #ffaa00);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 136, 0, 0.3);
+        }
+        button:hover {
+            background: linear-gradient(135deg, #ffaa00, #ff8800);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(255, 136, 0, 0.3);
+        }
+        button.danger {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.25);
+        }
+        button.danger:hover {
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+        }
+        button.secondary {
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+        }
+        button.secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .form-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        input[type="text"] {
+            width: 260px;
+            max-width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.95em;
+        }
+        label {
+            color: #ccc;
+            font-size: 0.95em;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0 16px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .status.info { background: rgba(33, 150, 243, 0.15); border: 1px solid rgba(33, 150, 243, 0.25); }
+        .status.success { background: rgba(76, 175, 80, 0.12); border: 1px solid rgba(76, 175, 80, 0.25); }
+        .status.error { background: rgba(244, 67, 54, 0.12); border: 1px solid rgba(244, 67, 54, 0.25); }
+        .muted { color: rgba(255,255,255,0.7); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            text-align: left;
+            font-size: 0.95em;
+        }
+        th { color: #ffb74d; position: sticky; top: 0; background: rgba(20,20,20,0.98); z-index: 1; }
+        .tableWrap {
+            max-height: 620px;
+            overflow: auto;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+        }
+        .pill {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            font-size: 0.85em;
+        }
+        .checkbox {
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loginScreen" class="container" style="text-align: center; padding: 60px 40px;">
+        <h1>🔐 Sessiohallinta</h1>
+        <p style="margin: 30px 0; color: #ccc;">Tämä sivu vaatii kirjautumista.</p>
+        <button onclick="showLoginForm()" style="max-width: 320px; margin: 0 auto;">Kirjaudu sisään</button>
+        <div id="loginStatus" class="status info" style="display:none; margin-top: 20px;"></div>
+    </div>
+
+    <div id="adminContent" class="container" style="display: none;">
+        <h1>🧾 Sessiohallinta</h1>
+
+        <div class="controls">
+            <button onclick="goBack()" class="secondary">⬅️ Takaisin adminiin</button>
+            <button onclick="loadSessions()">🔄 Päivitä</button>
+            <button onclick="deleteSelected()" id="deleteSelectedBtn" class="danger" disabled>🗑️ Poista valitut</button>
+            <button onclick="logout()" class="secondary">🚪 Kirjaudu ulos</button>
+        </div>
+
+        <div class="controls">
+            <div class="form-group">
+                <label for="filterNickname">Suodatus nimimerkillä:</label>
+                <input type="text" id="filterNickname" placeholder="Kirjoita nimimerkki...">
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" id="filterCompleted" class="checkbox"> Vain valmiit</label>
+                <label><input type="checkbox" id="latestOnly" class="checkbox"> Vain viimeisin per nimimerkki</label>
+            </div>
+        </div>
+
+        <div class="controls" style="justify-content: space-between;">
+            <div class="muted" id="pageInfo">-</div>
+            <div style="display:flex; gap: 8px; align-items:center;">
+                <button onclick="prevPage()" id="prevBtn" class="secondary">⬅️ Edellinen</button>
+                <span class="pill" id="pagePill">Sivu 1/1</span>
+                <button onclick="nextPage()" id="nextBtn" class="secondary">Seuraava ➡️</button>
+            </div>
+        </div>
+
+        <div id="status" class="status info">Ladataan...</div>
+
+        <div class="tableWrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" class="checkbox"></th>
+                        <th>Nimimerkki</th>
+                        <th>Aloitettu</th>
+                        <th>Viimeksi aktiivinen</th>
+                        <th>Vaihe</th>
+                        <th>Valmis</th>
+                        <th>Valmis aika</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        let auth = null;
+        let db = null;
+        const ALLOWED_EMAILS = ['toni@kauppinen.info'];
+
+        let sessions = [];
+        let pageSize = 10;
+        let page = 0;
+        const selectedIds = new Set();
+
+        function initializeFirebase() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCaLtaT4J4qFBxEE0bxK8_1yyQDbcwwWfs",
+                authDomain: "lahenalueet.firebaseapp.com",
+                projectId: "lahenalueet",
+                storageBucket: "lahenalueet.firebasestorage.app",
+                messagingSenderId: "237550096622",
+                appId: "1:237550096622:web:4d403d5c40ebf356dea3ff"
+            };
+
+            try {
+                firebase.initializeApp(firebaseConfig);
+            } catch (e) {
+            }
+
+            auth = firebase.auth();
+            db = firebase.firestore();
+
+            auth.onAuthStateChanged(user => {
+                if (user && ALLOWED_EMAILS.includes(user.email)) {
+                    document.getElementById('adminContent').style.display = 'block';
+                    document.getElementById('loginScreen').style.display = 'none';
+                    loadSessions();
+                } else {
+                    document.getElementById('adminContent').style.display = 'none';
+                    document.getElementById('loginScreen').style.display = 'block';
+                    if (user) {
+                        auth.signOut();
+                        alert('Käyttäjä ei ole sallittu!');
+                    }
+                }
+            });
+        }
+
+        function showLoginForm() {
+            const email = prompt('Syötä sähköpostisi:');
+            const password = prompt('Syötä salasanasi:');
+            if (email && password) {
+                auth.signInWithEmailAndPassword(email, password)
+                    .catch(error => {
+                        const el = document.getElementById('loginStatus');
+                        el.style.display = 'block';
+                        el.textContent = 'Kirjautuminen epäonnistui: ' + error.message;
+                        el.className = 'status error';
+                    });
+            }
+        }
+
+        function logout() {
+            auth.signOut();
+        }
+
+        function goBack() {
+            window.location.href = 'admin.html';
+        }
+
+        function formatTimestamp(ts) {
+            if (!ts) return '';
+            const d = ts.toDate ? ts.toDate() : (ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts));
+            if (Number.isNaN(d.getTime())) return '';
+            return d.toLocaleString('fi-FI');
+        }
+
+        function toMillis(ts) {
+            if (!ts) return 0;
+            if (typeof ts.toMillis === 'function') return ts.toMillis();
+            if (ts.seconds) return ts.seconds * 1000;
+            const d = new Date(ts);
+            return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+        }
+
+        function getFilterNickname() {
+            const el = document.getElementById('filterNickname');
+            return (el && el.value ? el.value.trim().toLowerCase() : '');
+        }
+
+        function isDerivedCompleted(s) {
+            return !!s.completed || (
+                Number.isFinite(s.currentStepIndex) && Number.isFinite(s.stepsTotal) && s.stepsTotal > 0 && s.currentStepIndex >= (s.stepsTotal - 1)
+            );
+        }
+
+        function getDerivedCompletedAt(s) {
+            if (s.completedAt) return s.completedAt;
+            if (isDerivedCompleted(s)) return s.lastActiveAt || s.createdAt;
+            return null;
+        }
+
+        function getVisibleSessions() {
+            const filter = getFilterNickname();
+            const completedOnly = document.getElementById('filterCompleted').checked;
+            const latestOnly = document.getElementById('latestOnly').checked;
+
+            let list = Array.isArray(sessions) ? [...sessions] : [];
+
+            if (filter) {
+                list = list.filter(s => ((s.nickname || '').toLowerCase().includes(filter)));
+            }
+
+            if (completedOnly) {
+                list = list.filter(s => isDerivedCompleted(s));
+            }
+
+            if (latestOnly) {
+                const map = new Map();
+                for (const s of list) {
+                    const key = (s.nickname || '').toLowerCase();
+                    if (!key) continue;
+                    const current = map.get(key);
+                    const sTime = Math.max(toMillis(s.createdAt), toMillis(s.lastActiveAt));
+                    const cTime = current ? Math.max(toMillis(current.createdAt), toMillis(current.lastActiveAt)) : -1;
+                    if (!current || sTime > cTime) {
+                        map.set(key, s);
+                    }
+                }
+                list = Array.from(map.values());
+            }
+
+            list.sort((a, b) => Math.max(toMillis(b.createdAt), toMillis(b.lastActiveAt)) - Math.max(toMillis(a.createdAt), toMillis(a.lastActiveAt)));
+            return list;
+        }
+
+        function clampPage(totalItems) {
+            const maxPage = Math.max(0, Math.ceil(totalItems / pageSize) - 1);
+            if (page > maxPage) page = maxPage;
+            if (page < 0) page = 0;
+        }
+
+        function prevPage() {
+            page--;
+            render();
+        }
+
+        function nextPage() {
+            page++;
+            render();
+        }
+
+        function updateDeleteButton() {
+            const btn = document.getElementById('deleteSelectedBtn');
+            btn.disabled = selectedIds.size === 0;
+        }
+
+        function onToggleSelect(id, checked) {
+            if (checked) selectedIds.add(id);
+            else selectedIds.delete(id);
+            updateDeleteButton();
+        }
+
+        function render() {
+            const visible = getVisibleSessions();
+            clampPage(visible.length);
+
+            const start = page * pageSize;
+            const end = Math.min(visible.length, start + pageSize);
+            const pageItems = visible.slice(start, end);
+
+            const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
+            document.getElementById('pagePill').textContent = `Sivu ${page + 1}/${totalPages}`;
+            document.getElementById('pageInfo').textContent = visible.length ? `Näytetään ${start + 1}-${end} / ${visible.length}` : 'Ei sessioita';
+            document.getElementById('prevBtn').disabled = page <= 0;
+            document.getElementById('nextBtn').disabled = page >= (totalPages - 1);
+
+            const tbody = document.getElementById('tbody');
+            tbody.innerHTML = pageItems.map(s => {
+                const createdAt = formatTimestamp(s.createdAt);
+                const lastActiveAt = formatTimestamp(s.lastActiveAt);
+                const completedAt = formatTimestamp(getDerivedCompletedAt(s));
+
+                const stepsTotal = Number.isFinite(s.stepsTotal) ? s.stepsTotal : '';
+                const stepIdx = Number.isFinite(s.currentStepIndex) ? (s.currentStepIndex + 1) : '';
+                const progress = (stepIdx && stepsTotal) ? `${stepIdx}/${stepsTotal}` : '';
+
+                const done = isDerivedCompleted(s);
+
+                const safeNick = (s.nickname || '').replace(/</g, '&lt;');
+                const safeId = (s.id || '').replace(/</g, '&lt;');
+
+                const checked = selectedIds.has(s.id) ? 'checked' : '';
+
+                return `
+                    <tr>
+                        <td><input type="checkbox" class="checkbox" ${checked} onchange="onToggleSelect('${s.id}', this.checked)"></td>
+                        <td>${safeNick}</td>
+                        <td class="muted">${createdAt}</td>
+                        <td class="muted">${lastActiveAt}</td>
+                        <td>${progress}</td>
+                        <td>${done ? '✅' : ''}</td>
+                        <td class="muted">${completedAt}</td>
+                        <td class="muted" style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em;">${safeId}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const selectAll = document.getElementById('selectAll');
+            if (pageItems.length === 0) {
+                selectAll.checked = false;
+                selectAll.indeterminate = false;
+                return;
+            }
+
+            const selectedCountOnPage = pageItems.filter(s => selectedIds.has(s.id)).length;
+            selectAll.checked = selectedCountOnPage === pageItems.length;
+            selectAll.indeterminate = selectedCountOnPage > 0 && selectedCountOnPage < pageItems.length;
+        }
+
+        async function loadSessions() {
+            const statusEl = document.getElementById('status');
+            try {
+                statusEl.textContent = 'Ladataan...';
+                statusEl.className = 'status info';
+
+                const snap = await db.collection('gameSessions').orderBy('createdAt', 'desc').limit(500).get();
+                sessions = [];
+                snap.forEach(doc => {
+                    sessions.push({ id: doc.id, ...doc.data() });
+                });
+
+                page = 0;
+                selectedIds.clear();
+                updateDeleteButton();
+                render();
+
+                statusEl.textContent = `Ladattu ${sessions.length} sessiota`;
+                statusEl.className = 'status success';
+
+            } catch (e) {
+                console.error(e);
+                statusEl.textContent = 'Virhe sessioiden lataamisessa: ' + (e && e.message ? e.message : e);
+                statusEl.className = 'status error';
+            }
+        }
+
+        async function deleteSelected() {
+            if (selectedIds.size === 0) return;
+
+            const count = selectedIds.size;
+            const ok = confirm(`Poistetaanko varmasti ${count} sessiota? Tätä ei voi perua.`);
+            if (!ok) return;
+
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = `Poistetaan ${count} sessiota...`;
+            statusEl.className = 'status info';
+
+            const ids = Array.from(selectedIds);
+            let deleted = 0;
+            let failed = 0;
+
+            for (const id of ids) {
+                try {
+                    await db.collection('gameSessions').doc(id).delete();
+                    deleted++;
+                } catch (e) {
+                    console.error('Delete failed', id, e);
+                    failed++;
+                }
+            }
+
+            statusEl.textContent = failed ? `Poistettu ${deleted}, epäonnistui ${failed}` : `Poistettu ${deleted} sessiota`;
+            statusEl.className = failed ? 'status error' : 'status success';
+
+            await loadSessions();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFirebase();
+
+            const filter = document.getElementById('filterNickname');
+            filter.addEventListener('input', () => { page = 0; render(); });
+
+            document.getElementById('filterCompleted').addEventListener('change', () => { page = 0; selectedIds.clear(); updateDeleteButton(); render(); });
+            document.getElementById('latestOnly').addEventListener('change', () => { page = 0; selectedIds.clear(); updateDeleteButton(); render(); });
+
+            const selectAll = document.getElementById('selectAll');
+            selectAll.addEventListener('change', () => {
+                const visible = getVisibleSessions();
+                clampPage(visible.length);
+                const start = page * pageSize;
+                const end = Math.min(visible.length, start + pageSize);
+                const pageItems = visible.slice(start, end);
+
+                if (selectAll.checked) {
+                    pageItems.forEach(s => selectedIds.add(s.id));
+                } else {
+                    pageItems.forEach(s => selectedIds.delete(s.id));
+                }
+
+                updateDeleteButton();
+                render();
+            });
+        });
+    </script>
+</body>
+</html>
