@@ -489,7 +489,7 @@
         </div>
         <br>
         <input type="text" id="salasanaInput" autofocus disabled placeholder="Kirjoita vastaus tähän...">
-        <input type="text" id="nimiInput" placeholder="Kirjoita kätkönimesi..." style="margin-top: 10px; display: none;">
+        <input type="text" id="nimiInput" placeholder="Kirjoita kätkönimesi..." style="margin-top: 10px; display: block;">
         <br>
         <button onclick="tarkistaSalasana()" disabled id="submitButton">Tarkista</button>
         <p id="viesti"></p>
@@ -790,35 +790,38 @@
             document.getElementById('progressText').style.display = 'block';
             updateProgress();
 
-            // AINA näytä nimi-input ensin
+            currentStepIndex = 0;
+            kayttonimi = '';
+            nimiField.value = '';
             nimiField.style.display = 'block';
-            nimiField.disabled = false;
-            nimiField.focus();
-            inputField.disabled = true;
-            submitButton.disabled = true;
-            kayttonimi = ''; // Nollaa nimi
+
+            const initialStepData = puzzleSetup.steps[currentStepIndex];
+            const challengeImage = initialStepData.challengeImage === "null" ? null : initialStepData.challengeImage;
+            const challengeText = initialStepData.challengeText === "null" ? null : initialStepData.challengeText;
+            updateChallengeDisplay(challengeImage, challengeText || puzzleSetup.initialPrompt);
             
-            viestiElementti.textContent = "Kirjoita kätkönimesi aloittaaksesi mysteerin.";
-            viestiElementti.className = 'info';
+            viestiElementti.textContent = "";
+            viestiElementti.className = '';
+            inputField.value = "";
+            inputField.disabled = false;
+            submitButton.disabled = false;
+            inputField.focus();
         }
 
         function tarkistaSalasana() {
             if (typeof puzzleSetup === 'undefined') return;
 
-            // Jos nimi-input on näkyvissä, tallenna nimi
-            if (nimiField.style.display !== 'none') {
-                if (setNimi(nimiField.value)) {
-                    nimiField.style.display = 'none';
-                    inputField.disabled = false;
-                    submitButton.disabled = false;
-                    inputField.focus();
-                    viestiElementti.textContent = `Terve ${getNimi()}! Nyt voit aloittaa mysteerin ratkaisemisen.`;
-                    viestiElementti.className = 'info';
-                    return;
-                } else {
+            // Alussa vaaditaan nimi, mutta ei disabloida tunnussanaa
+            if (!kayttonimi) {
+                if (!setNimi(nimiField.value)) {
                     viestiElementti.textContent = 'Kirjoita kätkönimesi jatkaaksesi.';
                     viestiElementti.className = 'error';
+                    viestiElementti.style.display = 'block';
+                    nimiField.focus();
                     return;
+                } else {
+                    // Nimi asetettu - piilota kenttä pelin ajaksi
+                    nimiField.style.display = 'none';
                 }
             }
 
@@ -947,6 +950,11 @@
                     inputField.value = "";
                     inputField.focus();
                     updateProgress();
+
+                    // Kun palataan alkuun, kysytään nimi uudelleen
+                    kayttonimi = '';
+                    nimiField.value = '';
+                    nimiField.style.display = 'block';
                     
                     // Näytä virheviesti
                     if (currentStep.challengeImage) {
