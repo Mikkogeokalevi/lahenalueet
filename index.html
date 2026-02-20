@@ -540,27 +540,25 @@
         let currentStepIndex = 0;
         let isLoading = true;
         let collectedCodeParts = []; // Kerätyt koodinpätkät
+        let kayttonimi = ''; // Nykyisen pelin nimi
 
-        // Kätkönimen hallinta
-        function getNimi() {
-            return localStorage.getItem('geocacheNimi') || '';
-        }
-
+        // Aseta nimi
         function setNimi(nimi) {
             if (nimi && nimi.trim()) {
-                localStorage.setItem('geocacheNimi', nimi.trim());
+                kayttonimi = nimi.trim();
                 return true;
             }
             return false;
         }
 
+        // Hae nimi
+        function getNimi() {
+            return kayttonimi || 'kätköilijä';
+        }
+
         // Korvaa {nimi} placeholder viestistä
         function korvaaNimi(viesti) {
-            const nimi = getNimi();
-            if (nimi) {
-                return viesti.replace(/\{nimi\}/g, nimi);
-            }
-            return viesti.replace(/\{nimi\}/g, 'kätköilijä');
+            return viesti.replace(/\{nimi\}/g, getNimi());
         }
 
         // Modal-funktiot
@@ -782,6 +780,7 @@
                 submitButton.disabled = true;
                 return; 
             }
+            
             puzzleSetup.steps.forEach(step => {
                 step.wrongAttemptsMade = 0;
             });
@@ -791,36 +790,16 @@
             document.getElementById('progressText').style.display = 'block';
             updateProgress();
 
-            const initialStepData = puzzleSetup.steps[currentStepIndex];
-            const challengeImage = initialStepData.challengeImage === "null" ? null : initialStepData.challengeImage;
-            const challengeText = initialStepData.challengeText === "null" ? null : initialStepData.challengeText;
-            updateChallengeDisplay(challengeImage, challengeText || puzzleSetup.initialPrompt);
+            // AINA näytä nimi-input ensin
+            nimiField.style.display = 'block';
+            nimiField.disabled = false;
+            nimiField.focus();
+            inputField.disabled = true;
+            submitButton.disabled = true;
+            kayttonimi = ''; // Nollaa nimi
             
-            viestiElementti.textContent = "";
-            viestiElementti.className = '';
-            inputField.value = "";
-            inputField.disabled = false;
-            submitButton.disabled = false;
-            inputField.focus();
-
-            // Näytä nimi-input jos ei ole tallennettu nimeä
-            const tallennettuNimi = getNimi();
-            if (!tallennettuNimi) {
-                // Näytä vain nimi-input
-                nimiField.style.display = 'block';
-                nimiField.disabled = false;
-                nimiField.focus();
-                inputField.disabled = true;
-                submitButton.disabled = true;
-                viestiElementti.textContent = "Kirjoita kätkönimesi aloittaaksesi mysteerin.";
-                viestiElementti.className = 'info';
-            } else {
-                // Nimi on jo tallennettu, näytä normaali peli
-                nimiField.style.display = 'none';
-                inputField.disabled = false;
-                submitButton.disabled = false;
-                inputField.focus();
-            }
+            viestiElementti.textContent = "Kirjoita kätkönimesi aloittaaksesi mysteerin.";
+            viestiElementti.className = 'info';
         }
 
         function tarkistaSalasana() {
