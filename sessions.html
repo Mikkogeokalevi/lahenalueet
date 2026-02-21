@@ -191,6 +191,7 @@
             <button onclick="goBack()" class="secondary">⬅️ Takaisin adminiin</button>
             <button onclick="loadSessions()">🔄 Päivitä</button>
             <button onclick="toggleAutoMode()" id="autoModeBtn" class="secondary">🟢 Autopäivitys: Realtime</button>
+            <button onclick="openWrongSummary()" class="secondary">📊 Virhekoonti</button>
             <button onclick="deleteSelected()" id="deleteSelectedBtn" class="danger" disabled>🗑️ Poista valitut</button>
             <button onclick="logout()" class="secondary">🚪 Kirjaudu ulos</button>
         </div>
@@ -243,6 +244,27 @@
                     <button class="secondary" onclick="closeWrongAnswers()">Sulje</button>
                 </div>
                 <div id="wrongModalBody" class="codeLike"></div>
+            </div>
+        </div>
+
+        <div id="wrongSummaryOverlay" class="modalOverlay" onclick="onWrongSummaryOverlayClick(event)">
+            <div class="modal">
+                <div class="modalHeader">
+                    <div class="modalTitle" id="wrongSummaryTitle">Virhekoonti</div>
+                    <button class="secondary" onclick="closeWrongSummary()">Sulje</button>
+                </div>
+                <div class="controls" style="margin: 0 0 10px;">
+                    <div class="form-group">
+                        <label for="wrongSummarySteps">Vaiheet (pilkulla eroteltu):</label>
+                        <input type="text" id="wrongSummarySteps" value="0,1,2,3" style="width: 220px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="wrongSummaryTopN">Top / vaihe:</label>
+                        <input type="text" id="wrongSummaryTopN" value="10" style="width: 90px;">
+                    </div>
+                    <button class="secondary" onclick="refreshWrongSummary()">🔄 Päivitä koonti</button>
+                </div>
+                <div id="wrongSummaryBody" class="codeLike"></div>
             </div>
         </div>
     </div>
@@ -445,9 +467,109 @@
             }
         }
 
+        function onWrongSummaryOverlayClick(event) {
+            const overlay = document.getElementById('wrongSummaryOverlay');
+            if (event.target === overlay) {
+                closeWrongSummary();
+            }
+        }
+
         function closeWrongAnswers() {
             const overlay = document.getElementById('wrongModalOverlay');
             overlay.style.display = 'none';
+        }
+
+        function closeWrongSummary() {
+            const overlay = document.getElementById('wrongSummaryOverlay');
+            overlay.style.display = 'none';
+        }
+
+        function openWrongSummary() {
+            const overlay = document.getElementById('wrongSummaryOverlay');
+            const body = document.getElementById('wrongSummaryBody');
+            overlay.style.display = 'flex';
+            body.textContent = 'Ladataan...';
+            refreshWrongSummary();
+        }
+
+        function parseStepsList(str) {
+            const s = String(str || '').trim();
+            if (!s) return [0, 1, 2, 3];
+            const parts = s.split(',').map(x => x.trim()).filter(Boolean);
+            const nums = parts.map(x => Number(x)).filter(n => Number.isFinite(n));
+            return nums.length ? Array.from(new Set(nums)) : [0, 1, 2, 3];
+        }
+
+        function parseTopN(str) {
+            const n = Number(String(str || '').trim());
+            if (!Number.isFinite(n) || n <= 0) return 10;
+            return Math.min(50, Math.floor(n));
+        }
+
+        async function refreshWrongSummary() {
+            const body = document.getElementById('wrongSummaryBody');
+            const stepsStr = document.getElementById('wrongSummarySteps').value;
+            const topNStr = document.getElementById('wrongSummaryTopN').value;
+
+            const steps = parseStepsList(stepsStr);
+            const topN = parseTopN(topNStr);
+
+            body.textContent = 'Ladataan...';
+
+            try {
+                let q = db.collectionGroup('wrongAnswers').orderBy('at', 'desc').limit(2000);
+
+                if (steps.length >= 1 && steps.length <= 10) {
+                    q = q.where('stepNumber', 'in', steps);
+                }
+
+                const snap = await q.get();
+                const freqByStep = new Map();
+                const totalByStep = new Map();
+
+                snap.forEach(doc => {
+                    const d = doc.data() || {};
+                    const step = Number.isFinite(d.stepNumber) ? d.stepNumber : Number(d.stepNumber);
+                    if (!Number.isFinite(step)) return;
+                    if (steps.length && !steps.includes(step)) return;
+                    const v = (typeof d.value === 'string') ? d.value.trim() : '';
+                    if (!v) return;
+
+                    totalByStep.set(step, (totalByStep.get(step) || 0) + 1);
+
+                    if (!freqByStep.has(step)) freqByStep.set(step, new Map());
+                    const m = freqByStep.get(step);
+                    m.set(v, (m.get(v) || 0) + 1);
+                });
+
+                const sortedSteps = Array.from(new Set(steps)).sort((a, b) => a - b);
+                const lines = [];
+                lines.push(`Koonti (haettu ${snap.size} merkintää, top ${topN} / vaihe):`);
+                lines.push('');
+
+                for (const step of sortedSteps) {
+                    const total = totalByStep.get(step) || 0;
+                    lines.push(`Vaihe ${step} (merkintöjä ${total}):`);
+                    const m = freqByStep.get(step);
+                    if (!m || m.size === 0) {
+                        lines.push('- (ei merkintöjä)');
+                        lines.push('');
+                        continue;
+                    }
+                    const top = Array.from(m.entries())
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, topN);
+                    for (const [val, count] of top) {
+                        lines.push(`- (${count}x) ${val}`);
+                    }
+                    lines.push('');
+                }
+
+                body.innerHTML = escapeHtml(lines.join('\n'));
+            } catch (e) {
+                console.error(e);
+                body.textContent = 'Virhe ladattaessa: ' + (e && e.message ? e.message : e);
+            }
         }
 
         async function openWrongAnswers(sessionId) {
