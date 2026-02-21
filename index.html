@@ -682,6 +682,37 @@
             }
         }
 
+        async function logWrongAnswer(stepNumber, rawInput) {
+            try {
+                if (!db || !kayttonimi) return;
+                const sessionId = getOrCreateSessionId();
+                const stepKey = String(stepNumber);
+
+                const inputStr = (rawInput === null || typeof rawInput === 'undefined') ? '' : String(rawInput);
+                const value = inputStr.trim().slice(0, 120);
+                if (!value) return;
+
+                const ref = db.collection('gameSessions').doc(sessionId);
+                await db.runTransaction(async (tx) => {
+                    const snap = await tx.get(ref);
+                    const data = snap.exists ? (snap.data() || {}) : {};
+                    const existing = (data.wrongAnswersByStep && typeof data.wrongAnswersByStep === 'object') ? data.wrongAnswersByStep : {};
+                    const currentList = Array.isArray(existing[stepKey]) ? existing[stepKey] : [];
+
+                    const nextList = currentList.concat([
+                        { at: firebase.firestore.Timestamp.now(), value }
+                    ]);
+                    const trimmed = nextList.slice(-10);
+
+                    tx.set(ref, {
+                        lastActiveAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        wrongAnswersByStep: { ...existing, [stepKey]: trimmed }
+                    }, { merge: true });
+                });
+            } catch (e) {
+            }
+        }
+
         // Modal-funktiot
         function openImageModal() {
             if (promptKuva.src && promptKuva.src !== '') {
@@ -960,7 +991,8 @@
                 }
             }
 
-            const syote = inputField.value.trim().toLowerCase();
+            const rawSyote = inputField.value;
+            const syote = rawSyote.trim().toLowerCase();
             const currentStep = puzzleSetup.steps[currentStepIndex];
 
             const expected = typeof currentStep.expectedInput === 'function' ? 
@@ -1076,6 +1108,7 @@
                 }
             } else {
                 // Väärä vastaus
+                logWrongAnswer(currentStep.stepNumber, rawSyote);
                 let errorMsg = typeof currentStep.errorMessage === 'function' ?
                               currentStep.errorMessage() :
                               currentStep.errorMessage || puzzleSetup.wrongInputMessage;
