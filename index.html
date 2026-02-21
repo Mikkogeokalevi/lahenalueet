@@ -686,29 +686,22 @@
             try {
                 if (!db || !kayttonimi) return;
                 const sessionId = getOrCreateSessionId();
-                const stepKey = String(stepNumber);
 
                 const inputStr = (rawInput === null || typeof rawInput === 'undefined') ? '' : String(rawInput);
                 const value = inputStr.trim().slice(0, 120);
                 if (!value) return;
 
-                const ref = db.collection('gameSessions').doc(sessionId);
-                await db.runTransaction(async (tx) => {
-                    const snap = await tx.get(ref);
-                    const data = snap.exists ? (snap.data() || {}) : {};
-                    const existing = (data.wrongAnswersByStep && typeof data.wrongAnswersByStep === 'object') ? data.wrongAnswersByStep : {};
-                    const currentList = Array.isArray(existing[stepKey]) ? existing[stepKey] : [];
+                const data = {
+                    stepNumber: Number(stepNumber),
+                    value,
+                    at: firebase.firestore.FieldValue.serverTimestamp()
+                };
 
-                    const nextList = currentList.concat([
-                        { at: firebase.firestore.Timestamp.now(), value }
-                    ]);
-                    const trimmed = nextList.slice(-10);
-
-                    tx.set(ref, {
-                        lastActiveAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        wrongAnswersByStep: { ...existing, [stepKey]: trimmed }
-                    }, { merge: true });
-                });
+                await db
+                    .collection('gameSessions')
+                    .doc(sessionId)
+                    .collection('wrongAnswers')
+                    .add(data);
             } catch (e) {
                 try {
                     console.error('logWrongAnswer failed', e);

@@ -469,21 +469,40 @@
                 const nick = s && s.nickname ? s.nickname : '';
                 title.textContent = `Väärät vastaukset: ${nick}`;
 
-                const map = (s && s.wrongAnswersByStep && typeof s.wrongAnswersByStep === 'object') ? s.wrongAnswersByStep : null;
-                if (!map || Object.keys(map).length === 0) {
+                const wrongSnap = await db
+                    .collection('gameSessions')
+                    .doc(sessionId)
+                    .collection('wrongAnswers')
+                    .orderBy('at', 'desc')
+                    .limit(200)
+                    .get();
+
+                const items = [];
+                wrongSnap.forEach(doc => {
+                    items.push({ id: doc.id, ...(doc.data() || {}) });
+                });
+
+                if (items.length === 0) {
                     body.textContent = 'Ei tallennettuja vääriä vastauksia tälle sessiolle.';
                     return;
                 }
 
-                const stepKeys = Object.keys(map)
-                    .map(k => ({ k, n: Number(k) }))
-                    .sort((a, b) => (Number.isFinite(a.n) ? a.n : 999999) - (Number.isFinite(b.n) ? b.n : 999999))
-                    .map(x => x.k);
+                const byStep = new Map();
+                for (const it of items) {
+                    const step = Number.isFinite(it.stepNumber) ? it.stepNumber : Number(it.stepNumber);
+                    const key = Number.isFinite(step) ? step : 0;
+                    if (!byStep.has(key)) byStep.set(key, []);
+                    const arr = byStep.get(key);
+                    if (arr.length < 10) {
+                        arr.push(it);
+                    }
+                }
 
+                const stepKeys = Array.from(byStep.keys()).sort((a, b) => a - b);
                 const lines = [];
                 for (const stepKey of stepKeys) {
-                    const list = Array.isArray(map[stepKey]) ? map[stepKey] : [];
-                    if (list.length === 0) continue;
+                    const list = byStep.get(stepKey) || [];
+                    if (!list.length) continue;
                     lines.push(`Vaihe ${stepKey}:`);
                     for (const item of list) {
                         const at = item && item.at ? formatTimestamp(item.at) : '';
