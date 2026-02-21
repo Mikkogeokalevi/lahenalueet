@@ -710,6 +710,10 @@
                     }, { merge: true });
                 });
             } catch (e) {
+                try {
+                    console.error('logWrongAnswer failed', e);
+                } catch (ee) {
+                }
             }
         }
 
