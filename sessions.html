@@ -133,6 +133,47 @@
             width: 16px;
             height: 16px;
         }
+
+        .modalOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 9999;
+        }
+        .modal {
+            width: min(900px, 100%);
+            max-height: 85vh;
+            overflow: auto;
+            background: rgba(20, 20, 20, 0.98);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 14px;
+            box-shadow: 0 30px 70px rgba(0,0,0,0.7);
+            padding: 18px;
+        }
+        .modalHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .modalTitle {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: #ffb74d;
+        }
+        .codeLike {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 8px 10px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 <body>
@@ -187,11 +228,22 @@
                         <th>Vaihe</th>
                         <th>Valmis</th>
                         <th>Valmis aika</th>
+                        <th>Virheet</th>
                         <th>ID</th>
                     </tr>
                 </thead>
                 <tbody id="tbody"></tbody>
             </table>
+        </div>
+
+        <div id="wrongModalOverlay" class="modalOverlay" onclick="onModalOverlayClick(event)">
+            <div class="modal">
+                <div class="modalHeader">
+                    <div class="modalTitle" id="wrongModalTitle">Väärät vastaukset</div>
+                    <button class="secondary" onclick="closeWrongAnswers()">Sulje</button>
+                </div>
+                <div id="wrongModalBody" class="codeLike"></div>
+            </div>
         </div>
     </div>
 
@@ -377,6 +429,65 @@
             return Number.isNaN(d.getTime()) ? 0 : d.getTime();
         }
 
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function onModalOverlayClick(event) {
+            const overlay = document.getElementById('wrongModalOverlay');
+            if (event.target === overlay) {
+                closeWrongAnswers();
+            }
+        }
+
+        function closeWrongAnswers() {
+            const overlay = document.getElementById('wrongModalOverlay');
+            overlay.style.display = 'none';
+        }
+
+        function openWrongAnswers(sessionId) {
+            const s = (Array.isArray(sessions) ? sessions : []).find(x => x.id === sessionId);
+            const overlay = document.getElementById('wrongModalOverlay');
+            const title = document.getElementById('wrongModalTitle');
+            const body = document.getElementById('wrongModalBody');
+
+            const nick = s && s.nickname ? s.nickname : '';
+            title.textContent = `Väärät vastaukset: ${nick}`;
+
+            const map = (s && s.wrongAnswersByStep && typeof s.wrongAnswersByStep === 'object') ? s.wrongAnswersByStep : null;
+            if (!map || Object.keys(map).length === 0) {
+                body.textContent = 'Ei tallennettuja vääriä vastauksia tälle sessiolle.';
+                overlay.style.display = 'flex';
+                return;
+            }
+
+            const stepKeys = Object.keys(map)
+                .map(k => ({ k, n: Number(k) }))
+                .sort((a, b) => (Number.isFinite(a.n) ? a.n : 999999) - (Number.isFinite(b.n) ? b.n : 999999))
+                .map(x => x.k);
+
+            const lines = [];
+            for (const stepKey of stepKeys) {
+                const list = Array.isArray(map[stepKey]) ? map[stepKey] : [];
+                if (list.length === 0) continue;
+                lines.push(`Vaihe ${stepKey}:`);
+                for (const item of list) {
+                    const at = item && item.at ? formatTimestamp(item.at) : '';
+                    const val = item && typeof item.value !== 'undefined' ? String(item.value) : '';
+                    lines.push(`- ${at ? at + ' — ' : ''}${val}`);
+                }
+                lines.push('');
+            }
+
+            body.innerHTML = escapeHtml(lines.join('\n'));
+            overlay.style.display = 'flex';
+        }
+
         function getFilterNickname() {
             const el = document.getElementById('filterNickname');
             return (el && el.value ? el.value.trim().toLowerCase() : '');
@@ -495,6 +606,7 @@
                         <td>${progress}</td>
                         <td>${done ? '✅' : ''}</td>
                         <td class="muted">${completedAt}</td>
+                        <td><button class="secondary" style="padding: 6px 10px;" onclick="openWrongAnswers('${s.id}')">👁️ Näytä</button></td>
                         <td class="muted" style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em;">${safeId}</td>
                     </tr>
                 `;
